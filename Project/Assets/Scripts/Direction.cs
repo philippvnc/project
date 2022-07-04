@@ -1,0 +1,150 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace direction
+{
+
+    public class Position3 : Position2
+    {
+        public int y;
+
+        public Position3(int x, int y, int z) : base(x, z)
+        {
+            this.y = y;
+        }
+    }
+
+    public class Position2
+    {
+        public int x;
+        public int z;
+
+        public Position2(int x, int z)
+        {
+            this.x = x;
+            this.z = z;
+        }
+
+        public bool Equals(Position2 position2)
+        {
+            if(position2 is null)
+            {
+                return false;
+            }
+            return (x == position2.x) && (z == position2.z);
+        }
+    }
+
+    public static class Projection
+    {
+        public static Position2 Project(Position3 pos, CamPerspective perspective)
+        {
+            switch (perspective.id)
+            {
+                case (CamPerspective.SOUTH_EAST):
+                    return new Position2(pos.x - pos.y, pos.z + pos.y);
+                case (CamPerspective.SOUTH_WEST):
+                    return new Position2(pos.x + pos.y, pos.z + pos.y);
+                case (CamPerspective.NORTH_WEST):
+                    return new Position2(pos.x + pos.y, pos.z - pos.y);
+                case (CamPerspective.NORTH_EAST):
+                default:
+                    return new Position2(pos.x - pos.y, pos.z - pos.y);
+            }
+        }
+    }
+
+    public static class PerspectiveCollection
+    {
+        public static CamPerspective[] perspectiveDirections = new CamPerspective[4] {
+            new CamPerspective(CamPerspective.SOUTH_EAST),
+            new CamPerspective(CamPerspective.SOUTH_WEST),
+            new CamPerspective(CamPerspective.NORTH_WEST),
+            new CamPerspective(CamPerspective.NORTH_EAST)};
+
+        public static CamPerspective GetClosestPerspective(float angle)
+        {
+            CamPerspective bestPers = null;
+            float bestDist = float.MaxValue; 
+            foreach(CamPerspective pers in perspectiveDirections)
+            {
+               if (Mathf.Abs(pers.angle - (int) angle) < bestDist)
+                {
+                    bestDist = Mathf.Abs(pers.angle - (int) angle);
+                    bestPers = pers;
+                } 
+            }
+            return bestPers;
+        }
+    }
+
+    public class CamPerspective
+    {
+        public const int SOUTH_EAST = 0;
+        public const int SOUTH_WEST = 1;
+        public const int NORTH_WEST = 2;
+        public const int NORTH_EAST = 3;
+
+        public int id;
+        public int angle;
+
+        public CamPerspective(int perspectiveId)
+        {
+            id = perspectiveId;
+            switch (perspectiveId)
+            {
+                case SOUTH_EAST:
+                    angle = 45;
+                    break;
+                case SOUTH_WEST:
+                    angle = 135;
+                    break;
+                case NORTH_WEST:
+                    angle = 225;
+                    break;
+                case NORTH_EAST:
+                    angle = 315;
+                    break;
+            }
+        }
+    }
+
+    public static class PlaneDirectionCollection
+    {
+        public static PlaneDirection[] planeDirections = new PlaneDirection[4] {
+            new PlaneDirection(PlaneDirection.NORTH), 
+            new PlaneDirection(PlaneDirection.EAST), 
+            new PlaneDirection(PlaneDirection.SOUTH), 
+            new PlaneDirection(PlaneDirection.WEST)};
+    }
+
+    public class PlaneDirection
+    {
+        public const int NORTH = 0;
+        public const int EAST = 1;
+        public const int SOUTH = 2;
+        public const int WEST = 3;
+
+        public Position2 pos;
+
+        public PlaneDirection(int planeDirectionId)
+        {
+            switch (planeDirectionId)
+            {
+                case NORTH:
+                    pos = new Position2(0, 1);
+                    break;
+                case EAST:
+                    pos = new Position2(1, 0);
+                    break;
+                case SOUTH:
+                    pos = new Position2(0, -1);
+                    break;
+                case WEST:
+                    pos = new Position2(-1, 0);
+                    break;
+            }
+        }
+    }
+}
