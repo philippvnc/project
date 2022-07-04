@@ -126,10 +126,12 @@ namespace direction
         public const int SOUTH = 2;
         public const int WEST = 3;
 
+        public int id;
         public Position2 pos;
 
         public PlaneDirection(int planeDirectionId)
         {
+            id = planeDirectionId;
             switch (planeDirectionId)
             {
                 case NORTH:

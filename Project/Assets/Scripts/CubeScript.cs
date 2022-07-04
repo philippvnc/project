@@ -11,7 +11,7 @@ public class CubeScript : MonoBehaviour
     public Position2 projection;
 
     public bool connected;
-    public ArrayList connections;
+    public CubeScript[] connections;
 
     void Awake()
     {
@@ -20,21 +20,9 @@ public class CubeScript : MonoBehaviour
             (int)transform.position.x,
             (int)transform.position.y,
             (int)transform.position.z);
-        connections = new ArrayList();
+        connections = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
         gridScript.cubeArray[pos.x, pos.y, pos.z] = true;
         gridScript.cubeList.Add(this);
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     void OnDrawGizmos()
@@ -43,7 +31,7 @@ public class CubeScript : MonoBehaviour
         Gizmos.color = Color.red;
         foreach(CubeScript cube in connections)
         {
-            Gizmos.DrawLine(transform.position, new Vector3(cube.pos.x, cube.pos.y, cube.pos.z));
+            if(cube != null) Gizmos.DrawLine(transform.position, new Vector3(cube.pos.x, cube.pos.y, cube.pos.z));
         }
         
     }
@@ -55,7 +43,7 @@ public class CubeScript : MonoBehaviour
 
     public void UpdateConnectivity(CamPerspective perspective)
     {
-        connections = new ArrayList();
+        connections = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
         foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections)
         {
             Position2 projectionToCheck = Projection.Project(
@@ -65,15 +53,38 @@ public class CubeScript : MonoBehaviour
             {
                 if (projectionToCheck.Equals(cube.projection))
                 {
-                    connections.Add(cube); 
+                    if(connections[planeDirection.id] != null)
+                    {
+                        Debug.Log("Found Overlapping connection in same direction! Choosing higher cube for connection");
+                        connections[planeDirection.id] = GetHigherCube(cube, connections[planeDirection.id]);
+                        //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+                    } else
+                    {
+                        connections[planeDirection.id] = cube;
+                    }
+
                     connected = true;
-                    gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+                    //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
 
                     //Debug.Log("connected to other cube on plane");
-
-
                 }
             }
         }
+    }
+
+    private static CubeScript GetHigherCube(CubeScript cube1, CubeScript cube2)
+    {
+        if (IsHeigherCube(cube1,cube2))
+        {
+            return cube1;
+        } else
+        {
+            return cube2;
+        }
+    }
+
+    public static bool IsHeigherCube(CubeScript cube1, CubeScript cube2)
+    {
+        return (cube1.gameObject.transform.position.y > cube2.gameObject.transform.position.y);
     }
 }

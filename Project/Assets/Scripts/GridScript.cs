@@ -6,8 +6,11 @@ using direction;
 public class GridScript : MonoBehaviour
 {
 
+    public GameObject player;
+    public CubeScript currentCube;
     public bool[,,] cubeArray = new bool[9, 9, 9];
     public ArrayList cubeList = new ArrayList();
+
 
     // Start is called before the first frame update
     void Start()
@@ -20,6 +23,7 @@ public class GridScript : MonoBehaviour
     {
         
     }
+
 
     public void UpdateConnectivityForAllCubes(CamPerspective perspective)
     {

@@ -12,7 +12,8 @@ public class CameraScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        perspective = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y);
+        perspective = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y); 
+        grid.UpdateConnectivityForAllCubes(perspective);
     }
 
     // Update is called once per frame
@@ -23,7 +24,7 @@ public class CameraScript : MonoBehaviour
             //print("The transform has changed!");
             transform.hasChanged = false;
             CamPerspective pers = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y);
-            print("best perspective: " + pers.id + " " + pers.angle);
+            //print("best perspective: " + pers.id + " " + pers.angle);
             if(perspective.id != pers.id)
             {
                 perspective = pers;
