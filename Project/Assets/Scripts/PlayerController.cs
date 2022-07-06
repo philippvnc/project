@@ -6,65 +6,47 @@ using direction;
 
 public class PlayerController : MonoBehaviour
 {
-    private InputActions inputActions;
-    private InputAction north;
-    private InputAction east;
-    private InputAction south;
-    private InputAction west;
-
+    
+    public InputManager inputManager;
     public GridScript grid;
+
+    void OnEnable(){
+        inputManager.OnTab += SetGoal;
+    }
     
-    // Start is called before the first frame update
-    void Awake()
-    {
-        inputActions = new InputActions();
+    void OnDisable(){
+        inputManager.OnTab -= SetGoal;
     }
 
-    // Update is called once per frame
+    private void SetGoal(GameObject tabbedGameObject){
+        PlaneDirection direction = grid.IsConnectedToCurrentCube(tabbedGameObject);
+        if(direction != null){
+            Debug.Log("Cube is neighbor of current cube");
+            MoveToCube(tabbedGameObject.GetComponent<CubeScript>(), direction);
+        }
+    }
+
+    private void MoveToCube(CubeScript cube, PlaneDirection direction){
+        if(CubeScript.IsHeigherCube(grid.currentCube, cube))
+        {
+            // moving down
+            gameObject.GetComponent<LinearMovement>().Move(
+                gameObject.transform.position,
+                gameObject.transform.position + new Vector3(direction.pos.x, 0, direction.pos.z),
+                cube.gameObject.transform.position + new Vector3(0, 1, 0));
+        } else
+        {
+            // moving up
+            gameObject.GetComponent<LinearMovement>().Move(
+                cube.gameObject.transform.position + new Vector3(0, 1, 0) - new Vector3(direction.pos.x, 0, direction.pos.z),
+                cube.gameObject.transform.position + new Vector3(0, 1, 0),
+                cube.gameObject.transform.position + new Vector3(0, 1, 0));
+        }
+
+        grid.currentCube = cube; 
+        Debug.Log("Actually Moved in this direction");
+    }
     
-    void OnEnable()
-    {
-        north = inputActions.Player.North;
-        east = inputActions.Player.East;
-        south = inputActions.Player.South;
-        west = inputActions.Player.West;
-        inputActions.Enable();
-
-        north.performed += North;
-        east.performed += East;
-        south.performed += South;
-        west.performed += West;
-    }
-
-    void OnDisable()
-    {
-        inputActions.Disable();
-    }
-
-    public void North(InputAction.CallbackContext context)
-    {
-        Debug.Log("MOVING North");
-        MoveInDirection(new PlaneDirection(PlaneDirection.NORTH));
-    }
-
-    public void East(InputAction.CallbackContext context)
-    {
-        Debug.Log("MOVING East");
-        MoveInDirection(new PlaneDirection(PlaneDirection.EAST));
-    }
-
-    public void South(InputAction.CallbackContext context)
-    {
-        Debug.Log("MOVING South");
-        MoveInDirection(new PlaneDirection(PlaneDirection.SOUTH));
-    }
-
-    public void West(InputAction.CallbackContext context)
-    {
-        Debug.Log("MOVING West");
-        MoveInDirection(new PlaneDirection(PlaneDirection.WEST));
-    }
-
     private void MoveInDirection(PlaneDirection direction)
     {
         if( grid.currentCube.connections[direction.id] == null)
@@ -73,27 +55,7 @@ public class PlayerController : MonoBehaviour
             return;
         } else
         {   
-            if(CubeScript.IsHeigherCube(grid.currentCube, grid.currentCube.connections[direction.id]))
-            {
-                // moving down
-                gameObject.GetComponent<LinearMovement>().Move(
-                    gameObject.transform.position,
-                    gameObject.transform.position + new Vector3(direction.pos.x, 0, direction.pos.z),
-                    grid.currentCube.connections[direction.id].gameObject.transform.position + new Vector3(0, 1, 0));
-            } else
-            {
-                // moving up
-                gameObject.GetComponent<LinearMovement>().Move(
-                    grid.currentCube.connections[direction.id].gameObject.transform.position + new Vector3(0, 1, 0) - new Vector3(direction.pos.x, 0, direction.pos.z),
-                    grid.currentCube.connections[direction.id].gameObject.transform.position + new Vector3(0, 1, 0),
-                    grid.currentCube.connections[direction.id].gameObject.transform.position + new Vector3(0, 1, 0));
-            }
-
-            
-
-            grid.currentCube = grid.currentCube.connections[direction.id]; 
-
-            Debug.Log("Actually Moved in this direction");
+            MoveToCube(grid.currentCube.connections[direction.id], direction);
         }
     }
 }

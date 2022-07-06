@@ -51,6 +51,7 @@ public class LinearMovement : MonoBehaviour
         {
             fractionOfJourney = 1; 
             transform.position = realEndMarker;
+            running = false;
         } else
         {
             // Set our position as a fraction of the distance between the markers.

@@ -361,12 +361,13 @@
 -r:"Library/Bee/artifacts/1900b0aE.dag/UnityEditor.UI.ref.dll"
 -r:"Library/Bee/artifacts/1900b0aE.dag/UnityEngine.UI.ref.dll"
 "Assets/InputActions.cs"
-"Assets/Scripts/CameraScript.cs"
+"Assets/Scripts/CameraController.cs"
 "Assets/Scripts/CubeScript.cs"
 "Assets/Scripts/Direction.cs"
 "Assets/Scripts/GridScript.cs"
+"Assets/Scripts/InputManager.cs"
 "Assets/Scripts/LinearMovement.cs"
-"Assets/Scripts/Perspective.cs"
+"Assets/Scripts/LinearRotation.cs"
 "Assets/Scripts/PlayerController.cs"
 -langversion:9.0
 

@@ -6,24 +6,9 @@ using direction;
 public class GridScript : MonoBehaviour
 {
 
-    public GameObject player;
     public CubeScript currentCube;
     public bool[,,] cubeArray = new bool[9, 9, 9];
     public ArrayList cubeList = new ArrayList();
-
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
 
     public void UpdateConnectivityForAllCubes(CamPerspective perspective)
     {
@@ -37,4 +22,15 @@ public class GridScript : MonoBehaviour
         }
     }
 
+    public PlaneDirection IsConnectedToCurrentCube(GameObject gameObjectToCheck){
+        foreach (PlaneDirection direction in PlaneDirectionCollection.planeDirections)
+        {
+            if(currentCube.connections[direction.id] != null) {
+                    if(GameObject.ReferenceEquals( currentCube.connections[direction.id].gameObject, gameObjectToCheck)){
+                    return direction;
+                }
+            }
+        }
+        return null;
+    }
 }
