@@ -23,6 +23,7 @@ public class PlayerController : MonoBehaviour
         if(direction != null){
             Debug.Log("Cube is neighbor of current cube");
             MoveToCube(tabbedGameObject.GetComponent<CubeScript>(), direction);
+            grid.ColorCurrentCubeAndNeighbors();
         }
     }
 

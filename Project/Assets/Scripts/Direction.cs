@@ -55,6 +55,24 @@ namespace direction
         }
     }
 
+    public static class Occlusion
+    {
+        /*
+        dim1: perspective
+        SE
+        SW
+        NW
+        NE
+        dim2: direction 
+        {N E S W}
+        */
+        public static bool[,] OccludedWhenHeigher = new bool[4,4]{
+            {true, false, false, true},
+            {true, true, false, false},
+            {false, true, true, false},
+            {false, false, true, true}};
+    }
+
     public static class PerspectiveCollection
     {
         public static CamPerspective[] perspectiveDirections = new CamPerspective[4] {

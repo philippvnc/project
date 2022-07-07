@@ -53,20 +53,20 @@ public class CubeScript : MonoBehaviour
             {
                 if (projectionToCheck.Equals(cube.projection))
                 {
-                    if(connections[planeDirection.id] != null)
+                    if(!IsOccluded(cube, perspective, planeDirection))
                     {
-                        Debug.Log("Found Overlapping connection in same direction! Choosing higher cube for connection");
-                        connections[planeDirection.id] = GetHigherCube(cube, connections[planeDirection.id]);
-                        //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-                    } else
-                    {
-                        connections[planeDirection.id] = cube;
+                        if(connections[planeDirection.id] != null)
+                        {
+                            Debug.Log("Found Overlapping connection in same direction! Choosing higher cube for connection");
+                            connections[planeDirection.id] = GetHigherCube(cube, connections[planeDirection.id]);
+                            //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+                        } else
+                        {
+                            connections[planeDirection.id] = cube;
+                        }
+                        connected = true;
+                        //Debug.Log("connected to other cube on plane");
                     }
-
-                    connected = true;
-                    //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-
-                    //Debug.Log("connected to other cube on plane");
                 }
             }
         }
@@ -83,8 +83,18 @@ public class CubeScript : MonoBehaviour
         }
     }
 
+    public static bool IsEqualHeigh(CubeScript cube1, CubeScript cube2)
+    {
+        return (cube1.gameObject.transform.position.y == cube2.gameObject.transform.position.y);
+    }
+
     public static bool IsHeigherCube(CubeScript cube1, CubeScript cube2)
     {
         return (cube1.gameObject.transform.position.y > cube2.gameObject.transform.position.y);
+    }
+
+    private bool IsOccluded(CubeScript cube, CamPerspective perspective, PlaneDirection direction){
+        if (IsEqualHeigh(cube, this)) return false;
+        return IsHeigherCube(cube, gameObject.GetComponent<CubeScript>()) == Occlusion.OccludedWhenHeigher[perspective.id, direction.id];
     }
 }

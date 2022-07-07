@@ -20,6 +20,7 @@ public class GridScript : MonoBehaviour
         {
             cube.UpdateConnectivity(perspective);
         }
+        ColorCurrentCubeAndNeighbors();
     }
 
     public PlaneDirection IsConnectedToCurrentCube(GameObject gameObjectToCheck){
@@ -32,5 +33,19 @@ public class GridScript : MonoBehaviour
             }
         }
         return null;
+    }
+
+    public void ColorCurrentCubeAndNeighbors(){
+        foreach(CubeScript cube in cubeList)
+        {
+            cube.gameObject.GetComponent<Renderer>().material.color = Color.white;
+        }
+        currentCube.gameObject.GetComponent<Renderer>().material.color = Color.blue;
+        foreach(CubeScript cube in currentCube.connections)
+        {
+            if(cube != null){
+                cube.gameObject.GetComponent<Renderer>().material.color = Color.cyan;
+            }
+        }
     }
 }
