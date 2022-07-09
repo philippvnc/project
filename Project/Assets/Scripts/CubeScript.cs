@@ -67,7 +67,7 @@ public class CubeScript : MonoBehaviour
                             connectionsList.Remove(connectionsArray[planeDirection.id]);
                             connectionsList.Add(GetHigherCube(cube, connectionsArray[planeDirection.id]));
                             connectionsDirectionDictionary.Remove(connectionsArray[planeDirection.id]);
-                            connectionsDirectionDictionary[cube] = planeDirection;
+                            connectionsDirectionDictionary[GetHigherCube(cube, connectionsArray[planeDirection.id])] = planeDirection;
                             connectionsArray[planeDirection.id] = GetHigherCube(cube, connectionsArray[planeDirection.id]);
                             //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
                         } else

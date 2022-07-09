@@ -53,7 +53,7 @@ public class PlayerController : MonoBehaviour
         }
 
         grid.currentCube = cube; 
-        Debug.Log("Actually Moved in this direction");
+        Debug.Log("Actually Moving in this direction");
     }
     
     private void MoveInDirection(PlaneDirection direction)
