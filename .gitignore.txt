@@ -1,0 +1,3 @@
+Project\Temp
+Project\Logs
+Project\Library
