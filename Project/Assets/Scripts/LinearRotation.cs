@@ -44,12 +44,14 @@ public class LinearRotation : MonoBehaviour
             running = false;
             //Debug.Log("Rotation Complete, setting to " + endAngle * (fractionOfJourney));
         } 
+        float updateAngle = startAngle * (1-fractionOfJourney) + endAngle * (fractionOfJourney);
+        if (float.IsNaN(updateAngle)) return;
         gameObject.transform.eulerAngles = new Vector3(
                 gameObject.transform.eulerAngles.x,
-                startAngle * (1-fractionOfJourney) + endAngle * (fractionOfJourney),
+                updateAngle,
                 gameObject.transform.eulerAngles.z
         );
 
-        //Debug.Log("Y Euler angle after setting " + gameObject.transform.eulerAngles.y);
+        //Debug.Log("update angle " + updateAngle+ " Y Euler angle " + gameObject.transform.eulerAngles.y);
     }
 }

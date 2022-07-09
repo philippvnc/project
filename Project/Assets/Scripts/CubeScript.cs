@@ -11,7 +11,9 @@ public class CubeScript : MonoBehaviour
     public Position2 projection;
 
     public bool connected;
-    public CubeScript[] connections;
+    public CubeScript[] connectionsArray;
+    public List<CubeScript> connectionsList;
+    public IDictionary connectionsDirectionDictionary;
 
     void Awake()
     {
@@ -20,18 +22,20 @@ public class CubeScript : MonoBehaviour
             (int)transform.position.x,
             (int)transform.position.y,
             (int)transform.position.z);
-        connections = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
+        connectionsArray = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
+        connectionsList = new List<CubeScript>();
+        connectionsDirectionDictionary = new Dictionary<CubeScript,PlaneDirection>(); 
         gridScript.cubeArray[pos.x, pos.y, pos.z] = true;
         gridScript.cubeList.Add(this);
     }
 
     void OnDrawGizmos()
     {
-        if (connections == null) return;
+        if (connectionsList == null) return;
         Gizmos.color = Color.red;
-        foreach(CubeScript cube in connections)
+        foreach(CubeScript cube in connectionsList)
         {
-            if(cube != null) Gizmos.DrawLine(transform.position, new Vector3(cube.pos.x, cube.pos.y, cube.pos.z));
+            Gizmos.DrawLine(transform.position, new Vector3(cube.pos.x, cube.pos.y, cube.pos.z));
         }
         
     }
@@ -43,7 +47,9 @@ public class CubeScript : MonoBehaviour
 
     public void UpdateConnectivity(CamPerspective perspective)
     {
-        connections = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
+        connectionsArray = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
+        connectionsList = new List<CubeScript>();
+        connectionsDirectionDictionary = new Dictionary<CubeScript, PlaneDirection>();
         foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections)
         {
             Position2 projectionToCheck = Projection.Project(
@@ -55,14 +61,20 @@ public class CubeScript : MonoBehaviour
                 {
                     if(!IsOccluded(cube, perspective, planeDirection))
                     {
-                        if(connections[planeDirection.id] != null)
+                        if(connectionsArray[planeDirection.id] != null)
                         {
                             Debug.Log("Found Overlapping connection in same direction! Choosing higher cube for connection");
-                            connections[planeDirection.id] = GetHigherCube(cube, connections[planeDirection.id]);
+                            connectionsList.Remove(connectionsArray[planeDirection.id]);
+                            connectionsList.Add(GetHigherCube(cube, connectionsArray[planeDirection.id]));
+                            connectionsDirectionDictionary.Remove(connectionsArray[planeDirection.id]);
+                            connectionsDirectionDictionary[cube] = planeDirection;
+                            connectionsArray[planeDirection.id] = GetHigherCube(cube, connectionsArray[planeDirection.id]);
                             //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
                         } else
                         {
-                            connections[planeDirection.id] = cube;
+                            connectionsArray[planeDirection.id] = cube;
+                            connectionsList.Add(cube);
+                            connectionsDirectionDictionary[cube] = planeDirection;
                         }
                         connected = true;
                         //Debug.Log("connected to other cube on plane");

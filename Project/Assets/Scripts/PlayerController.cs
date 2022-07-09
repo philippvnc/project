@@ -19,12 +19,20 @@ public class PlayerController : MonoBehaviour
     }
 
     private void SetGoal(GameObject tabbedGameObject){
-        PlaneDirection direction = grid.IsConnectedToCurrentCube(tabbedGameObject);
-        if(direction != null){
-            Debug.Log("Cube is neighbor of current cube");
-            MoveToCube(tabbedGameObject.GetComponent<CubeScript>(), direction);
-            grid.ColorCurrentCubeAndNeighbors();
+        CubeScript tabbedCube = tabbedGameObject.GetComponent<CubeScript>();
+        if(tabbedCube == null){
+            Debug.Log("Tabbed Object is not a Cube");
+            return;
         }
+        CubeScript successorCube = grid.GetSuccessorOnPath(tabbedCube);
+        if(successorCube == null){
+            Debug.Log("Tabbed Cube is not on a path with current cube");
+            return;
+        }
+        Debug.Log("Tabbed Cube is on path of current cube");
+        MoveToCube(successorCube, (PlaneDirection) grid.currentCube.connectionsDirectionDictionary[successorCube]);
+        grid.ColorCurrentCubeAndNeighbors();
+    
     }
 
     private void MoveToCube(CubeScript cube, PlaneDirection direction){
@@ -50,13 +58,13 @@ public class PlayerController : MonoBehaviour
     
     private void MoveInDirection(PlaneDirection direction)
     {
-        if( grid.currentCube.connections[direction.id] == null)
+        if( grid.currentCube.connectionsArray[direction.id] == null)
         {
             Debug.Log("Can not move in this direction");
             return;
         } else
         {   
-            MoveToCube(grid.currentCube.connections[direction.id], direction);
+            MoveToCube(grid.currentCube.connectionsArray[direction.id], direction);
         }
     }
 }
