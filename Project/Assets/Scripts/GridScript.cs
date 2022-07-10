@@ -21,10 +21,10 @@ public class GridScript : MonoBehaviour
     public void Start(){
         Debug.Log("Grid Start");
         CreateCube(new Vector3(5,5,5));
-        CreateCube(new Vector3(2,5,5));
-        CreateCube(new Vector3(3,5,5));
         CreateCube(new Vector3(4,5,5));
         CreateCube(new Vector3(6,5,5));
+        CreateEveryPossibleNeighbor();
+        CreateEveryPossibleNeighbor();
         currentCube = cubeList[0];
     }
 
@@ -39,14 +39,31 @@ public class GridScript : MonoBehaviour
         cubeList.Add(cubeScript);
     }
 
-    public Vector3 GenerateNewNeighborPosition(){
-        List<CubeScript> neighbors = new List<CubeScript>();
+    public List<Vector3> GenerateNewNeighborPosition(){ 
+        List<Vector3> freeNeighbors = new List<Vector3>();
+        bool[,,] freeNeighborsArray = new bool[9, 9, 9];
         foreach(CubeScript cube in cubeList)
         {
-            //TODO implement
-            //neighbors.Add()
+            foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections)
+            {
+                Position3 position = new Position3(cube.pos.x + planeDirection.pos.x, cube.pos.y, cube.pos.z + planeDirection.pos.z);
+                // add shift 
+                if(!cubeArray[position.x,position.y,position.z] && !freeNeighborsArray[position.x,position.y,position.z])
+                {
+                    freeNeighbors.Add(new Vector3(position.x,position.y,position.z));
+                    freeNeighborsArray[position.x,position.y,position.z] = true;
+                }
+            }
         }
-        return new Vector3();
+        Debug.Log("generated possible neighbors positions: " + freeNeighbors.Count);
+        return freeNeighbors;
+    }
+
+    public void CreateEveryPossibleNeighbor(){
+        foreach(Vector3 vector3 in GenerateNewNeighborPosition())
+        {
+            CreateCube(vector3);
+        }
     }
 
     public void RemoveOldestCube(){
@@ -101,6 +118,7 @@ public class GridScript : MonoBehaviour
             }
         }
         cubeSuccessors = Pathfinding.FloydWarshallSuccessors(initialSuccessors);
+        /*
         for (int i = 0; i < cubeSuccessors.GetLength(0); i++)
         {
             string line = "";
@@ -110,6 +128,7 @@ public class GridScript : MonoBehaviour
             }
             Debug.Log(line);
         }
+        */
     }
 
     public CubeScript GetSuccessorOnPath(CubeScript startCube, CubeScript endCube){
