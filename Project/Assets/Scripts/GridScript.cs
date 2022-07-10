@@ -32,14 +32,6 @@ public class GridScript : MonoBehaviour
         CreateRandomPossibleNeighbor();
         CreateRandomPossibleNeighbor();
         CreateRandomPossibleNeighbor();
-        CreateRandomPossibleNeighbor();
-        CreateRandomPossibleNeighbor();
-        CreateRandomPossibleNeighbor();
-        CreateRandomPossibleNeighbor();
-        CreateRandomPossibleNeighbor();
-        CreateRandomPossibleNeighbor();
-        CreateRandomPossibleNeighbor();
-        CreateRandomPossibleNeighbor();
         currentCube = cubeList[0];
     }
 
