@@ -6,8 +6,8 @@ using direction;
 public class CubeScript : MonoBehaviour
 {
 
-    private GridScript gridScript;
-    private Position3 pos;
+    public GridScript gridScript;
+    public Position3 pos;
     public Position2 projection;
 
     public bool connected;
@@ -15,9 +15,9 @@ public class CubeScript : MonoBehaviour
     public List<CubeScript> connectionsList;
     public IDictionary connectionsDirectionDictionary;
 
-    void Awake()
+    public void Init()
     {
-        gridScript = transform.parent.gameObject.GetComponent<GridScript>();
+        Debug.Log("Cube Init");
         pos = new Position3(
             (int)transform.position.x,
             (int)transform.position.y,
@@ -25,8 +25,6 @@ public class CubeScript : MonoBehaviour
         connectionsArray = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
         connectionsList = new List<CubeScript>();
         connectionsDirectionDictionary = new Dictionary<CubeScript,PlaneDirection>(); 
-        gridScript.cubeArray[pos.x, pos.y, pos.z] = true;
-        gridScript.cubeList.Add(this);
     }
 
     void OnDrawGizmos()

@@ -4,17 +4,58 @@ using UnityEngine;
 using direction;
 using pathfinding;
 
+
+[DefaultExecutionOrder(-9)]
 public class GridScript : MonoBehaviour
 {
+    public GameObject cubePrefab;
 
     public CubeScript currentCube;
     public bool[,,] cubeArray = new bool[9, 9, 9];
     public List<CubeScript> cubeList = new List<CubeScript>();
     public IDictionary cubeDictionary = new Dictionary<CubeScript,int>(); 
     public int[,] cubeSuccessors;
+    
+    public CamPerspective currentPerspective;
+
+    public void Start(){
+        Debug.Log("Grid Start");
+        CreateCube(new Vector3(5,5,5));
+        CreateCube(new Vector3(2,5,5));
+        CreateCube(new Vector3(3,5,5));
+        CreateCube(new Vector3(4,5,5));
+        CreateCube(new Vector3(6,5,5));
+        currentCube = cubeList[0];
+    }
+
+    public void CreateCube(Vector3 position){
+        GameObject cubeGA = Instantiate(cubePrefab,position,Quaternion.identity) as GameObject;
+        cubeGA.transform.parent=transform; 
+
+        CubeScript cubeScript = cubeGA.GetComponent<CubeScript>();
+        cubeScript.Init();
+        cubeScript.gridScript = gameObject.GetComponent<GridScript>();
+        cubeArray[cubeScript.pos.x, cubeScript.pos.y, cubeScript.pos.z] = true;
+        cubeList.Add(cubeScript);
+    }
+
+    public Vector3 GenerateNewNeighborPosition(){
+        List<CubeScript> neighbors = new List<CubeScript>();
+        foreach(CubeScript cube in cubeList)
+        {
+            //TODO implement
+            //neighbors.Add()
+        }
+        return new Vector3();
+    }
+
+    public void RemoveOldestCube(){
+        //TODO implement
+    }
 
     public void UpdateConnectivityForAllCubes(CamPerspective perspective)
     {
+        currentPerspective = perspective;
         foreach(CubeScript cube in cubeList)
         {
             cube.UpdateProjection(perspective);
@@ -60,6 +101,15 @@ public class GridScript : MonoBehaviour
             }
         }
         cubeSuccessors = Pathfinding.FloydWarshallSuccessors(initialSuccessors);
+        for (int i = 0; i < cubeSuccessors.GetLength(0); i++)
+        {
+            string line = "";
+            for (int j = 0; j < cubeSuccessors.GetLength(1); j++)
+            {
+                line += cubeSuccessors[i, j] + " ";
+            }
+            Debug.Log(line);
+        }
     }
 
     public CubeScript GetSuccessorOnPath(CubeScript startCube, CubeScript endCube){

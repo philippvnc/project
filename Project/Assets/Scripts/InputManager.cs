@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 using direction;
 
-[DefaultExecutionOrder(-1)]
+[DefaultExecutionOrder(-10)]
 public class InputManager : MonoBehaviour
 {
     public delegate void StartTouchEvent(Vector2 position);

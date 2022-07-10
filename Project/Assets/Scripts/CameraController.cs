@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using direction;
 
+[DefaultExecutionOrder(-8)]
 public class CameraController : MonoBehaviour
 {
 
@@ -29,9 +30,10 @@ public class CameraController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Debug.Log("Cam Start");
         perspective = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y); 
-        grid.UpdateConnectivityForAllCubes(perspective);
         linearRotation = gameObject.GetComponent<LinearRotation>();
+        grid.UpdateConnectivityForAllCubes(perspective);
     }
 
     public void StartTouch(Vector2 screenPosition){
