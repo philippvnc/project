@@ -13,6 +13,10 @@ namespace direction
         {
             this.y = y;
         }
+
+        new public string ToString(){
+            return "x: " + x + " y: " + y + " z: " + z;  
+        }
     }
 
     public class Position2
@@ -52,6 +56,32 @@ namespace direction
                 default:
                     return new Position2(pos.x - pos.y, pos.z - pos.y);
             }
+        }
+        
+        public static Position3 GetShiftToHeigh(Position3 pos, CamPerspective perspective, int y)
+        {
+            int diff = pos.y - y;
+            switch (perspective.id)
+            {
+                case (CamPerspective.SOUTH_EAST):
+                    return new Position3(pos.x - diff, y, pos.z + diff);
+                case (CamPerspective.SOUTH_WEST):
+                    return new Position3(pos.x + diff, y, pos.z + diff);
+                case (CamPerspective.NORTH_WEST):
+                    return new Position3(pos.x + diff, y, pos.z - diff);
+                case (CamPerspective.NORTH_EAST):
+                default:
+                    return new Position3(pos.x - diff, y, pos.z - diff);
+            }
+        }
+
+        public static List<Position3> GetAllShiftsToHeigh(Position3 pos, CamPerspective perspective, int fromY, int toY)
+        {
+            List<Position3> shifts = new List<Position3>();
+            for(int y = fromY; y < toY; y++){
+                shifts.Add(GetShiftToHeigh(pos,perspective,y));
+            }
+            return shifts;
         }
     }
 
@@ -93,6 +123,7 @@ namespace direction
                     bestPers = pers;
                 } 
             }
+            //Debug.Log("best perspective: " + bestPers.id + " " + bestPers.angle);
             return bestPers;
         }
     }

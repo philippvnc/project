@@ -9,22 +9,37 @@ using pathfinding;
 public class GridScript : MonoBehaviour
 {
     public GameObject cubePrefab;
+    public int gridSize = 5;
 
     public CubeScript currentCube;
-    public bool[,,] cubeArray = new bool[9, 9, 9];
-    public List<CubeScript> cubeList = new List<CubeScript>();
-    public IDictionary cubeDictionary = new Dictionary<CubeScript,int>(); 
+    public bool[,,] cubeArray;
+    public List<CubeScript> cubeList;
+    public IDictionary cubeDictionary;
     public int[,] cubeSuccessors;
     
     public CamPerspective currentPerspective;
 
     public void Start(){
         Debug.Log("Grid Start");
-        CreateCube(new Vector3(5,5,5));
-        CreateCube(new Vector3(4,5,5));
-        CreateCube(new Vector3(6,5,5));
-        CreateEveryPossibleNeighbor();
-        CreateEveryPossibleNeighbor();
+        cubeArray = new bool[gridSize, gridSize, gridSize];
+        cubeList = new List<CubeScript>();
+        cubeDictionary = new Dictionary<CubeScript,int>(); 
+        //hardcoded for testing
+        currentPerspective = new CamPerspective(CamPerspective.NORTH_WEST);
+        CreateCube(new Vector3(2,2,2));
+        //CreateEveryPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
         currentCube = cubeList[0];
     }
 
@@ -41,19 +56,43 @@ public class GridScript : MonoBehaviour
 
     public List<Vector3> GenerateNewNeighborPosition(){ 
         List<Vector3> freeNeighbors = new List<Vector3>();
-        bool[,,] freeNeighborsArray = new bool[9, 9, 9];
+        bool[,,] freeNeighborsArray = new bool[gridSize, gridSize, gridSize];
         foreach(CubeScript cube in cubeList)
         {
             foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections)
             {
                 Position3 position = new Position3(cube.pos.x + planeDirection.pos.x, cube.pos.y, cube.pos.z + planeDirection.pos.z);
-                // add shift 
-                if(!cubeArray[position.x,position.y,position.z] && !freeNeighborsArray[position.x,position.y,position.z])
-                {
-                    freeNeighbors.Add(new Vector3(position.x,position.y,position.z));
-                    freeNeighborsArray[position.x,position.y,position.z] = true;
+                foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+                    // skip own perspective
+                    if(currentPerspective.id == perspective.id){
+                        continue;
+                    }
+                    // add shift 
+                    List<Position3> shiftedNeighbors;
+                    if(Occlusion.OccludedWhenHeigher[perspective.id,planeDirection.id]){
+                        shiftedNeighbors = Projection.GetAllShiftsToHeigh(position, perspective, 0, position.y);
+                    } else {
+                        shiftedNeighbors = Projection.GetAllShiftsToHeigh(position, perspective, position.y+1, gridSize-1);
+                    }
+                    foreach(Position3 shiftedNeighbor in shiftedNeighbors)
+                    {
+                        // out of gridSize?
+                        if(shiftedNeighbor.x < 0 || shiftedNeighbor.x >= gridSize 
+                            || shiftedNeighbor.z < 0 || shiftedNeighbor.z >= gridSize) {
+                            continue;
+                        }
+                        Debug.Log("Can i add this shifted position? " + shiftedNeighbor.ToString());
+                        // cube or neighbor position already there?
+                        if(cubeArray[shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z] 
+                            || freeNeighborsArray[shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z])
+                        {
+                            continue;
+                        }
+                        freeNeighbors.Add(new Vector3(shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z));
+                        freeNeighborsArray[shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z] = true;
+                    }
                 }
-            }
+            }   
         }
         Debug.Log("generated possible neighbors positions: " + freeNeighbors.Count);
         return freeNeighbors;
@@ -64,6 +103,11 @@ public class GridScript : MonoBehaviour
         {
             CreateCube(vector3);
         }
+    }
+
+    public void CreateRandomPossibleNeighbor(){
+        List<Vector3> positions = GenerateNewNeighborPosition();
+        CreateCube(positions[Random.Range(0, positions.Count)]);
     }
 
     public void RemoveOldestCube(){
@@ -85,7 +129,7 @@ public class GridScript : MonoBehaviour
         for (int i = 0; i < cubeList.Count; i++){
             cubeDictionary.Add(cubeList[i], i);
         }
-        ColorCurrentCubeAndNeighbors();
+        //ColorCurrentCubeAndNeighbors();
         GetSuccessors();
     }
 

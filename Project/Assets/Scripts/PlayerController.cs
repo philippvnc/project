@@ -31,7 +31,7 @@ public class PlayerController : MonoBehaviour
         }
         Debug.Log("Tabbed Cube is on path of current cube");
         MoveToCube(successorCube, (PlaneDirection) grid.currentCube.connectionsDirectionDictionary[successorCube]);
-        grid.ColorCurrentCubeAndNeighbors();
+        //grid.ColorCurrentCubeAndNeighbors();
     
     }
 
