@@ -31,18 +31,23 @@ public class GridScript : MonoBehaviour
         currentPerspective = new CamPerspective(CamPerspective.NORTH_WEST);
         currentCube = CreateCube(new Vector3(2,2,2));
         CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
+        CreateRandomPossibleNeighbor();
         
         BuildCubeDictionary();
         UpdateConnectivityForAllCubes();
         CalculateSuccessors();
 
         GatherProjectionArray();
-        ColorCurrentCubeAndReachableCubes();
+        currentCube.Plant();
+        ExtendPlanting();
     }
 
     public void SetPerspective(CamPerspective perspective){
         currentPerspective = perspective;
-        ColorCurrentCubeAndReachableCubes();
+        ExtendPlanting();
     }
 
     public CubeScript CreateCube(Vector3 position){
@@ -152,16 +157,13 @@ public class GridScript : MonoBehaviour
         }
     }
 
-    public void ColorCurrentCubeAndReachableCubes(){
+    public void ExtendPlanting(){
         foreach(CubeScript cube in cubeList)
         {
             if(GetSuccessorOnPath(cube) != null){
-                cube.gameObject.GetComponent<Renderer>().material = cube.reachableMaterial;
-            } else {
-                cube.gameObject.GetComponent<Renderer>().material = cube.unreachableMaterial;
-            }
+                cube.Plant();
+            } 
         }
-        currentCube.gameObject.GetComponent<Renderer>().material = currentCube.reachableMaterial;
     }
 
     public void CalculateSuccessors(){

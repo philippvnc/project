@@ -6,14 +6,15 @@ using direction;
 public class CubeScript : MonoBehaviour
 {
 
-    public Material reachableMaterial;
+    public Material unPlantedMaterial;
+    public Material plantedMaterial;
     public Material unreachableMaterial;
 
     public GridScript gridScript;
     public Position3 pos;
     public Position2[] projection;
 
-    public bool connected;
+    public bool planted;
     public CubeScript[,] connectionsArray;
     public List<CubeScript>[] connectionsList;
     public IDictionary[] connectionsDirectionDictionary;
@@ -41,6 +42,11 @@ public class CubeScript : MonoBehaviour
             connectionsList[perspective.id] = new List<CubeScript>();
             connectionsDirectionDictionary[perspective.id] = new Dictionary<CubeScript,PlaneDirection>();
         }
+    }
+
+    public void Plant(){
+        planted = true;
+        gameObject.GetComponent<Renderer>().material = plantedMaterial;
     }
 
     private void CalculateProjections()
@@ -106,8 +112,6 @@ public class CubeScript : MonoBehaviour
             connectionsList[perspective.id].Add(cube);
             connectionsDirectionDictionary[perspective.id][cube] = planeDirection;
         }
-        connected = true;
-        Debug.Log("connected to other cube on plane");
     }
 
     private static CubeScript GetHigherCube(CubeScript cube1, CubeScript cube2)

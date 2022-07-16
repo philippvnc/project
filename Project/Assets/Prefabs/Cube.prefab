@@ -308,10 +308,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4db7f2014786cf84296c41fc39a61994, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  reachableMaterial: {fileID: 2100000, guid: 42950249bf638384ca2baf861d0afd44, type: 2}
+  unPlantedMaterial: {fileID: 2100000, guid: 42950249bf638384ca2baf861d0afd44, type: 2}
+  plantedMaterial: {fileID: 2100000, guid: 72ca318f9fedf0944b2231e429ff967b, type: 2}
   unreachableMaterial: {fileID: 2100000, guid: 5dcf4b3a7e3f9a7469273081f1905b56, type: 2}
   gridScript: {fileID: 0}
-  connected: 0
+  planted: 0
 --- !u!1 &7648698468241693535
 GameObject:
   m_ObjectHideFlags: 0

@@ -54,7 +54,6 @@ public class PlayerController : MonoBehaviour
         }
 
         grid.currentCube = cube; 
-        grid.ColorCurrentCubeAndReachableCubes();
         Debug.Log("Actually Moving in this direction");
     }
     
