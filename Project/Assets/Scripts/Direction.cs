@@ -30,6 +30,10 @@ namespace direction
             this.z = z;
         }
 
+        new public string ToString(){
+            return "x: " + x + " z: " + z;  
+        }
+
         public bool Equals(Position2 position2)
         {
             if(position2 is null)
@@ -137,6 +141,7 @@ namespace direction
 
         public int id;
         public int angle;
+        public PlaneDirection viewDirection;
 
         public CamPerspective(int perspectiveId)
         {
@@ -145,15 +150,19 @@ namespace direction
             {
                 case SOUTH_EAST:
                     angle = 45;
+                    viewDirection = new PlaneDirection(PlaneDirection.NORTH_WEST);
                     break;
                 case SOUTH_WEST:
                     angle = 135;
+                    viewDirection = new PlaneDirection(PlaneDirection.NORTH_EAST);
                     break;
                 case NORTH_WEST:
                     angle = 225;
+                    viewDirection = new PlaneDirection(PlaneDirection.SOUTH_EAST);
                     break;
                 case NORTH_EAST:
                     angle = 315;
+                    viewDirection = new PlaneDirection(PlaneDirection.SOUTH_WEST);
                     break;
             }
         }
@@ -175,6 +184,11 @@ namespace direction
         public const int SOUTH = 2;
         public const int WEST = 3;
 
+        public const int SOUTH_EAST = 4;
+        public const int SOUTH_WEST = 5;
+        public const int NORTH_WEST = 6;
+        public const int NORTH_EAST = 7;
+
         public int id;
         public Position2 pos;
 
@@ -186,15 +200,28 @@ namespace direction
                 case NORTH:
                     pos = new Position2(0, 1);
                     break;
+                case NORTH_EAST:
+                    pos = new Position2(1, 1);
+                    break;
                 case EAST:
                     pos = new Position2(1, 0);
+                    break;
+                case SOUTH_EAST:
+                    pos = new Position2(1, -1);
                     break;
                 case SOUTH:
                     pos = new Position2(0, -1);
                     break;
+                case SOUTH_WEST:
+                    pos = new Position2(-1, -1);
+                    break;
                 case WEST:
                     pos = new Position2(-1, 0);
                     break;
+                case NORTH_WEST:
+                    pos = new Position2(-1, 1);
+                    break;
+                
             }
         }
     }

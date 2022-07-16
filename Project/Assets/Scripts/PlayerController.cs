@@ -30,7 +30,8 @@ public class PlayerController : MonoBehaviour
             return;
         }
         Debug.Log("Tabbed Cube is on path of current cube");
-        MoveToCube(successorCube, (PlaneDirection) grid.currentCube.connectionsDirectionDictionary[successorCube]);
+        MoveToCube(successorCube, (PlaneDirection) grid.currentCube.connectionsDirectionDictionary
+            [grid.currentPerspective.id][successorCube]);
         //grid.ColorCurrentCubeAndNeighbors();
     
     }
@@ -53,18 +54,19 @@ public class PlayerController : MonoBehaviour
         }
 
         grid.currentCube = cube; 
+        grid.ColorCurrentCubeAndReachableCubes();
         Debug.Log("Actually Moving in this direction");
     }
     
     private void MoveInDirection(PlaneDirection direction)
     {
-        if( grid.currentCube.connectionsArray[direction.id] == null)
+        if( grid.currentCube.connectionsArray[grid.currentPerspective.id, direction.id] == null)
         {
             Debug.Log("Can not move in this direction");
             return;
         } else
         {   
-            MoveToCube(grid.currentCube.connectionsArray[direction.id], direction);
+            MoveToCube(grid.currentCube.connectionsArray[grid.currentPerspective.id, direction.id], direction);
         }
     }
 }

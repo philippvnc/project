@@ -33,7 +33,6 @@ public class CameraController : MonoBehaviour
         Debug.Log("Cam Start");
         perspective = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y); 
         linearRotation = gameObject.GetComponent<LinearRotation>();
-        grid.UpdateConnectivityForAllCubes(perspective);
     }
 
     public void StartTouch(Vector2 screenPosition){
@@ -57,8 +56,7 @@ public class CameraController : MonoBehaviour
         if (perspective.id != pers.id)
         {
             perspective = pers;
-            grid.UpdateConnectivityForAllCubes(perspective);
-            print("Updated all connectivities");
+            grid.SetPerspective(perspective);
         }
     }
 

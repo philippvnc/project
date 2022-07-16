@@ -6,14 +6,19 @@ using direction;
 public class CubeScript : MonoBehaviour
 {
 
+    public Material reachableMaterial;
+    public Material unreachableMaterial;
+
     public GridScript gridScript;
     public Position3 pos;
-    public Position2 projection;
+    public Position2[] projection;
 
     public bool connected;
-    public CubeScript[] connectionsArray;
-    public List<CubeScript> connectionsList;
-    public IDictionary connectionsDirectionDictionary;
+    public CubeScript[,] connectionsArray;
+    public List<CubeScript>[] connectionsList;
+    public IDictionary[] connectionsDirectionDictionary;
+
+    
 
     public void Init()
     {
@@ -22,11 +27,30 @@ public class CubeScript : MonoBehaviour
             (int)transform.position.x,
             (int)transform.position.y,
             (int)transform.position.z);
-        connectionsArray = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
-        connectionsList = new List<CubeScript>();
-        connectionsDirectionDictionary = new Dictionary<CubeScript,PlaneDirection>(); 
+        ResetConnections();
+        CalculateProjections();
     }
 
+    private void ResetConnections(){
+        connectionsArray = new CubeScript[PerspectiveCollection.perspectiveDirections.Length,
+            PlaneDirectionCollection.planeDirections.Length];
+        connectionsList = new List<CubeScript>[PerspectiveCollection.perspectiveDirections.Length];
+        connectionsDirectionDictionary = new Dictionary<CubeScript,PlaneDirection>[
+            PerspectiveCollection.perspectiveDirections.Length]; 
+        foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+            connectionsList[perspective.id] = new List<CubeScript>();
+            connectionsDirectionDictionary[perspective.id] = new Dictionary<CubeScript,PlaneDirection>();
+        }
+    }
+
+    private void CalculateProjections()
+    {
+        projection = new Position2[PerspectiveCollection.perspectiveDirections.Length];
+        foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+            projection[perspective.id] = Projection.Project(pos, perspective);    
+        }
+    }
+/*
     void OnDrawGizmos()
     {
         if (connectionsList == null) return;
@@ -37,49 +61,53 @@ public class CubeScript : MonoBehaviour
         }
         
     }
+    */
 
-    public void UpdateProjection(CamPerspective perspective)
-    {
-        projection = Projection.Project(pos, perspective);
-    }
 
-    public void UpdateConnectivity(CamPerspective perspective)
+    public void UpdateConnectivity()
     {
-        connectionsArray = new CubeScript[PlaneDirectionCollection.planeDirections.Length];
-        connectionsList = new List<CubeScript>();
-        connectionsDirectionDictionary = new Dictionary<CubeScript, PlaneDirection>();
-        foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections)
-        {
-            Position2 projectionToCheck = Projection.Project(
-                new Position3(pos.x + planeDirection.pos.x, pos.y, pos.z + planeDirection.pos.z), perspective);
-            //Debug.Log("" + planeDirection.x + " " + planeDirection.z);
-            foreach(CubeScript cube in gridScript.cubeList)
+        ResetConnections();
+        foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+            foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections)
             {
-                if (projectionToCheck.Equals(cube.projection))
-                {
-                    if(!IsOccluded(cube, perspective, planeDirection))
+                if(!IsPhysicallyBlocked(planeDirection)){
+                    Position2 projectionToCheck = Projection.Project(
+                        new Position3(pos.x + planeDirection.pos.x, pos.y, pos.z + planeDirection.pos.z), perspective);
+                    foreach(CubeScript cube in gridScript.cubeList)
                     {
-                        if(connectionsArray[planeDirection.id] != null)
+                        if (projectionToCheck.Equals(cube.projection[perspective.id]))
                         {
-                            Debug.Log("Found Overlapping connection in same direction! Choosing higher cube for connection");
-                            connectionsList.Remove(connectionsArray[planeDirection.id]);
-                            connectionsList.Add(GetHigherCube(cube, connectionsArray[planeDirection.id]));
-                            connectionsDirectionDictionary.Remove(connectionsArray[planeDirection.id]);
-                            connectionsDirectionDictionary[GetHigherCube(cube, connectionsArray[planeDirection.id])] = planeDirection;
-                            connectionsArray[planeDirection.id] = GetHigherCube(cube, connectionsArray[planeDirection.id]);
-                            //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-                        } else
-                        {
-                            connectionsArray[planeDirection.id] = cube;
-                            connectionsList.Add(cube);
-                            connectionsDirectionDictionary[cube] = planeDirection;
+                            if(!IsOccluded(cube, perspective, planeDirection))
+                            {
+                                if(!IsVisuallyBocked(cube, perspective)){
+                                    RegisterNeighborCube(cube, perspective, planeDirection);
+                                }
+                            }
                         }
-                        connected = true;
-                        //Debug.Log("connected to other cube on plane");
                     }
                 }
             }
         }
+    }
+
+    private void RegisterNeighborCube(CubeScript cube,CamPerspective perspective,PlaneDirection planeDirection){
+        if(connectionsArray[perspective.id, planeDirection.id] != null)
+        {
+            Debug.Log("Found Overlapping connection in same direction! Choosing higher cube for connection");
+            connectionsList[perspective.id].Remove(connectionsArray[perspective.id, planeDirection.id]);
+            connectionsList[perspective.id].Add(GetHigherCube(cube, connectionsArray[perspective.id, planeDirection.id]));
+            connectionsDirectionDictionary[perspective.id].Remove(connectionsArray[perspective.id, planeDirection.id]);
+            connectionsDirectionDictionary[perspective.id][GetHigherCube(cube, connectionsArray[perspective.id, planeDirection.id])] = planeDirection;
+            connectionsArray[perspective.id, planeDirection.id] = GetHigherCube(cube, connectionsArray[perspective.id, planeDirection.id]);
+            //gameObject.GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+        } else
+        {
+            connectionsArray[perspective.id, planeDirection.id] = cube;
+            connectionsList[perspective.id].Add(cube);
+            connectionsDirectionDictionary[perspective.id][cube] = planeDirection;
+        }
+        connected = true;
+        Debug.Log("connected to other cube on plane");
     }
 
     private static CubeScript GetHigherCube(CubeScript cube1, CubeScript cube2)
@@ -106,5 +134,23 @@ public class CubeScript : MonoBehaviour
     private bool IsOccluded(CubeScript cube, CamPerspective perspective, PlaneDirection direction){
         if (IsEqualHeigh(cube, this)) return false;
         return IsHeigherCube(cube, gameObject.GetComponent<CubeScript>()) == Occlusion.OccludedWhenHeigher[perspective.id, direction.id];
+    }
+
+    private bool IsPhysicallyBlocked(PlaneDirection direction){
+        if (gridScript.IsOutOfGrid(pos.x + direction.pos.x, pos.y + 1, pos.z + direction.pos.z)) return false;
+        return gridScript.cubeArray[pos.x + direction.pos.x, pos.y + 1, pos.z + direction.pos.z];
+    }
+
+    private bool IsVisuallyBocked(CubeScript cube, CamPerspective perspective){
+        CubeScript higherCube = GetHigherCube(this, cube);
+        return gridScript.IsCubeAtProjection(perspective,
+        Projection.Project(   
+            new Position3(
+                higherCube.pos.x + perspective.viewDirection.pos.x, 
+                higherCube.pos.y, 
+                higherCube.pos.z + perspective.viewDirection.pos.z),
+            perspective),
+        Mathf.Min(this.pos.y, cube.pos.y) + 1, 
+        Mathf.Max(this.pos.y, cube.pos.y));
     }
 }
