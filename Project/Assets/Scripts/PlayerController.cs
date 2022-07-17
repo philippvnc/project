@@ -53,7 +53,7 @@ public class PlayerController : MonoBehaviour
                 cube.gameObject.transform.position + new Vector3(0, 1, 0));
         }
 
-        grid.currentCube = cube; 
+        grid.SetCurrentCube(cube);
         Debug.Log("Actually Moving in this direction");
     }
     

@@ -8,6 +8,7 @@ public class CubeScript : MonoBehaviour
 
     public Material unPlantedMaterial;
     public Material plantedMaterial;
+    public Material plantableMaterial;
     public Material unreachableMaterial;
 
     public GridScript gridScript;
@@ -44,9 +45,26 @@ public class CubeScript : MonoBehaviour
         }
     }
 
-    public void Plant(){
+    public void MarkPlanted(){
         planted = true;
         gameObject.GetComponent<Renderer>().material = plantedMaterial;
+    }
+
+    public void MarkPlantable(){
+        if (planted) return;
+        gameObject.GetComponent<Renderer>().material = plantableMaterial;
+        Debug.Log("Marked Cube plantable " + pos.ToString());
+    }
+
+    public void MarkReachable(){
+        if (planted) return;
+        gameObject.GetComponent<Renderer>().material = unPlantedMaterial;
+        Debug.Log("Marked Cube reachable " + pos.ToString());
+    }
+
+    public void MarkUnreachable(){
+        gameObject.GetComponent<Renderer>().material = unreachableMaterial;
+        Debug.Log("Marked Cube unreachable " + pos.ToString());
     }
 
     private void CalculateProjections()

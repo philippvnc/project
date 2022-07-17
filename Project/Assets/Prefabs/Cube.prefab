@@ -223,7 +223,7 @@ Transform:
   m_GameObject: {fileID: 7648698467848041878}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 5, y: 5, z: 5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.001, y: 1.001, z: 1.001}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7648698468241693528}
@@ -310,6 +310,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unPlantedMaterial: {fileID: 2100000, guid: 42950249bf638384ca2baf861d0afd44, type: 2}
   plantedMaterial: {fileID: 2100000, guid: 72ca318f9fedf0944b2231e429ff967b, type: 2}
+  plantableMaterial: {fileID: 2100000, guid: e9cdc662d3a1bf0419a212aef920fcbd, type: 2}
   unreachableMaterial: {fileID: 2100000, guid: 5dcf4b3a7e3f9a7469273081f1905b56, type: 2}
   gridScript: {fileID: 0}
   planted: 0
