@@ -252,7 +252,9 @@ MonoBehaviour:
   cubePrefab: {fileID: 7648698467848041878, guid: f70a6bae1587160458d6a16aa235e26b,
     type: 3}
   gridSize: 7
-  cubeCount: 2
+  cubeCount: 6
+  skipCurrentDirectionTill: 3
+  skipDirectNeighbors: 1
   maxTriesForCubeCreation: 20
   currentCube: {fileID: 0}
   cubeList: []
@@ -318,8 +320,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36de73fa66cfa35439f71385e83c5553, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minSpeed: 50
-  currentSpeed: 1
+  velocity: 0
+  minAngleForAction: 0.01
+  maxVelocity: 360
+  slowDownVelocity: 120
+  drag: 20
+  snapRange: 0.01
+  accelerationStartVelocity: 10
+  regardVelocity: 0.5
+  running: 0
+  settling: 0
+  turning: 0
+  deceletaring: 0
+  accelerating: 0
 --- !u!114 &616759837
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,57 +1,215 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using direction;
 
+[DefaultExecutionOrder(-8)]
 public class LinearRotation : MonoBehaviour
 {
+
+    public delegate void OnSettlingOnPerspectiveEvent(CamPerspective perspective);
+    public event OnSettlingOnPerspectiveEvent OnSettlingOnPerspective;
+
     private float startAngle;
     private float endAngle;
+    private float startEndAngleDiff;
 
-    public float minSpeed = 5.0F;
-    public float currentSpeed = 1.0F;
+    public float velocity = 0F;
+    public float minAngleForAction = 0.01F;
+    public float maxVelocity = 360F;
+    public float slowDownVelocity = 0.1F;
+    public float drag = 1.0F;
+    public float snapRange = 0.1F;
+    public float accelerationStartVelocity = 0.02F;
+    public float regardVelocity = 0.0F;
 
-    private float startTime;
+    public bool running;
+    public bool settling;
+    public bool turning;
+    public bool deceletaring;
+    public bool accelerating;
 
-    private float journeyLength;
+    public void Initialize(float velocity)
+    {   
+        if(Mathf.Abs(velocity) < minAngleForAction){
+            float currentEndAngle = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y).angle;
+            if(Mathf.Abs(currentEndAngle - transform.localEulerAngles.y) < minAngleForAction){
+                Debug.Log("Not enough movement for action ");
+                return;
+            }
+        }
+        
 
-    private bool running;
-
-    public void Rotate(float startAngle, float endAngle)
-    {
-        this.startAngle = startAngle;
-        this.endAngle = endAngle;
-
-        startTime = Time.time;
-
-        journeyLength = Mathf.Abs(startAngle - endAngle);
-
+        Debug.Log("unclamped velocity input " + velocity);
+        this.velocity = Mathf.Clamp(velocity, -maxVelocity, maxVelocity);
+        Debug.Log("clamped velocity input " + this.velocity);
         running = true;
+
+        if(Mathf.Abs(velocity) < Mathf.Abs(slowDownVelocity)){
+            Debug.Log("Initial Velocity < min Velocity! initialize settling");
+            InitializeSettling();
+        } else {
+            Debug.Log("Initial Velocity > min Velocity! slowing down first");
+        }
+    }
+
+    private void SlowDown(){
+        //Debug.Log("velocity: " + velocity);
+        Rotate(velocity, false);
+        if(velocity > 0){
+            velocity -= drag;
+            if(velocity < slowDownVelocity){
+                velocity = slowDownVelocity;
+                InitializeSettling();
+            }
+        } else {
+            velocity += drag;
+            if(velocity > -slowDownVelocity){
+                velocity = -slowDownVelocity;
+                InitializeSettling();
+            }
+        }
+        
+    }
+
+    private void InitializeSettling(){
+        settling = true;   
+        startAngle = transform.localEulerAngles.y;
+        CamPerspective perspective = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y + (velocity*regardVelocity));
+        if(OnSettlingOnPerspective != null) OnSettlingOnPerspective(perspective);
+        endAngle = perspective.angle;
+        startEndAngleDiff = endAngle - startAngle;
+        Debug.Log("From " + startAngle + " to " + endAngle + " is dist " + startEndAngleDiff);
+        Debug.Log("velocity " + velocity);
+        if(velocity == 0){
+            Debug.Log("No Movement, need to accelerat");
+            InitializeAcceleration();
+        } else if((startEndAngleDiff > 0) == (velocity > 0)){
+            Debug.Log("Need to decelerate");
+            deceletaring = true;
+        } else {
+            Debug.Log("Currently moving in wrong direction, need to turn");
+            turning = true;
+        }
+    }
+
+    private void Turn(){
+        //Debug.Log("turning velocity: " + velocity);
+        Rotate(velocity, false);
+        if(velocity > 0){
+            velocity -= drag;
+            if(velocity < 0){
+                InitializeAcceleration();
+            }
+        } else {
+            velocity += drag;
+            if(velocity > -slowDownVelocity){
+                InitializeAcceleration();
+            }
+        }
+    }
+
+    private void InitializeAcceleration(){
+        turning = false;
+        accelerating = true;
+        startAngle = transform.localEulerAngles.y;
+        startEndAngleDiff = endAngle - startAngle;
+        velocity = accelerationStartVelocity;
+    }
+
+    private void Accelerate(){
+        //Debug.Log("velocity: " + velocity);
+        //Debug.Log("accelerating fraction: " + GetFraction());
+
+        //Debug.Log("spike function return: " + GetSpikeFunctionReturn(GetFraction()));
+
+        if (startEndAngleDiff >0){
+            Rotate(velocity + (slowDownVelocity * GetSpikeFunctionReturn(GetFraction())), false);
+        } else {
+            Rotate(-velocity - (slowDownVelocity * GetSpikeFunctionReturn(GetFraction())), false);
+        }
+        
+        if(GetAbsFraction() < snapRange){
+            SetMotionDone();
+        }
+    }
+
+    private void Decelerate(){
+        //Debug.Log("decelerating fraction: " + GetAbsFraction());
+        Rotate(velocity * GetAbsFraction(), false);
+        if(GetFraction() < snapRange){
+            SetMotionDone();
+        }
+    }
+
+    private void SetMotionDone(){
+        velocity = 0;
+        SetYEulerAngleTo(endAngle);
+        CancelEverything();
+    }
+
+    private void CancelEverything(){
+        running = false;
+        settling = false;
+        turning = false;
+        accelerating = false;
+        deceletaring = false;
+    }
+
+
+    private float GetAbsFraction(){
+        return Mathf.Min(Mathf.Abs(transform.localEulerAngles.y - endAngle) / Mathf.Abs(startEndAngleDiff), 1);
+    }
+
+    private float GetFraction(){
+        return Mathf.Min((endAngle - transform.localEulerAngles.y) / startEndAngleDiff, 1);
+    }
+
+    private float GetSpikeFunctionReturn(float x){
+        if(x < 0.5F){
+            return x;
+        } else {
+            return 1 - x;
+        }
     }
 
     void Update()
     {
         if (!running) return;
 
-        // Distance moved equals elapsed time times speed..
-        float distCovered = (Time.time - startTime) * currentSpeed;
+        if (!settling) {
+            SlowDown();
+            return;
+        }
 
-        // Fraction of journey completed equals current distance divided by total distance.
-        float fractionOfJourney = distCovered / journeyLength;
+        if(turning) {
+            Turn();
+            return;
+        }
 
-        if(fractionOfJourney >= 1)
-        {
-            fractionOfJourney = 1;
-            running = false;
-            //Debug.Log("Rotation Complete, setting to " + endAngle * (fractionOfJourney));
-        } 
-        float updateAngle = startAngle * (1-fractionOfJourney) + endAngle * (fractionOfJourney);
-        if (float.IsNaN(updateAngle)) return;
-        gameObject.transform.eulerAngles = new Vector3(
-                gameObject.transform.eulerAngles.x,
-                updateAngle,
-                gameObject.transform.eulerAngles.z
+        if(accelerating){
+            Accelerate();
+            return;
+        }
+        
+        if(deceletaring){
+            Decelerate();
+            return;
+        }
+    }
+
+    public void Rotate(float amount, bool cancelOnGoingMovements)
+    {
+        if(cancelOnGoingMovements) CancelEverything();
+        SetYEulerAngleTo(transform.eulerAngles.y + (Mathf.Clamp(amount, -maxVelocity, maxVelocity) * Time.deltaTime));
+    }
+
+    private void SetYEulerAngleTo(float y)
+    {
+        transform.eulerAngles = new Vector3(
+             transform.eulerAngles.x,
+             y,
+             transform.eulerAngles.z
         );
-
-        //Debug.Log("update angle " + updateAngle+ " Y Euler angle " + gameObject.transform.eulerAngles.y);
     }
 }
