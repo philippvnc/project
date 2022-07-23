@@ -4,7 +4,7 @@ using UnityEngine;
 using direction;
 
 [DefaultExecutionOrder(-8)]
-public class LinearRotation : MonoBehaviour
+public class SnapRotation : MonoBehaviour
 {
 
     public delegate void OnSettlingOnPerspectiveEvent(CamPerspective perspective);
@@ -15,13 +15,13 @@ public class LinearRotation : MonoBehaviour
     private float startEndAngleDiff;
 
     public float velocity = 0F;
-    public float minAngleForAction = 0.01F;
+    public float minVelocity = 10F;
     public float maxVelocity = 360F;
-    public float slowDownVelocity = 0.1F;
-    public float drag = 1.0F;
-    public float snapRange = 0.1F;
-    public float accelerationStartVelocity = 0.02F;
-    public float regardVelocity = 0.0F;
+    public float slowDownVelocity = 120F;
+    public float drag = 20F;
+    public float snapRange = 00.1F;
+    public float regardVelocity = 0.5F;
+    public float minAngleForAction = 0.01F;
 
     public bool running;
     public bool settling;
@@ -45,7 +45,7 @@ public class LinearRotation : MonoBehaviour
         Debug.Log("clamped velocity input " + this.velocity);
         running = true;
 
-        if(Mathf.Abs(velocity) < Mathf.Abs(slowDownVelocity)){
+        if(Mathf.Abs(velocity) < slowDownVelocity){
             Debug.Log("Initial Velocity < min Velocity! initialize settling");
             InitializeSettling();
         } else {
@@ -82,7 +82,7 @@ public class LinearRotation : MonoBehaviour
         Debug.Log("From " + startAngle + " to " + endAngle + " is dist " + startEndAngleDiff);
         Debug.Log("velocity " + velocity);
         if(velocity == 0){
-            Debug.Log("No Movement, need to accelerat");
+            Debug.Log("No Movement, need to accelerate");
             InitializeAcceleration();
         } else if((startEndAngleDiff > 0) == (velocity > 0)){
             Debug.Log("Need to decelerate");
@@ -96,14 +96,14 @@ public class LinearRotation : MonoBehaviour
     private void Turn(){
         //Debug.Log("turning velocity: " + velocity);
         Rotate(velocity, false);
-        if(velocity > 0){
+        if(velocity >= 0){
             velocity -= drag;
             if(velocity < 0){
                 InitializeAcceleration();
             }
         } else {
             velocity += drag;
-            if(velocity > -slowDownVelocity){
+            if(velocity > 0){
                 InitializeAcceleration();
             }
         }
@@ -114,31 +114,40 @@ public class LinearRotation : MonoBehaviour
         accelerating = true;
         startAngle = transform.localEulerAngles.y;
         startEndAngleDiff = endAngle - startAngle;
-        velocity = accelerationStartVelocity;
     }
 
     private void Accelerate(){
         //Debug.Log("velocity: " + velocity);
         //Debug.Log("accelerating fraction: " + GetFraction());
-
-        //Debug.Log("spike function return: " + GetSpikeFunctionReturn(GetFraction()));
-
-        if (startEndAngleDiff >0){
-            Rotate(velocity + (slowDownVelocity * GetSpikeFunctionReturn(GetFraction())), false);
+        if(startEndAngleDiff >= 0){
+            velocity = Interpolate(slowDownVelocity, minVelocity, GetSpikeFunctionReturn(GetAbsFraction()));
+            Rotate(velocity, false);
+            if(GetAbsFraction() < 0.49 && transform.localEulerAngles.y > endAngle - snapRange){
+                SetMotionDone();
+            }
         } else {
-            Rotate(-velocity - (slowDownVelocity * GetSpikeFunctionReturn(GetFraction())), false);
-        }
-        
-        if(GetAbsFraction() < snapRange){
-            SetMotionDone();
+            velocity = Interpolate(-slowDownVelocity, -minVelocity, GetSpikeFunctionReturn(GetAbsFraction()));
+            Rotate(velocity, false);
+            if(GetAbsFraction() < 0.49 && transform.localEulerAngles.y < endAngle + snapRange){
+                SetMotionDone();
+            }
         }
     }
 
     private void Decelerate(){
         //Debug.Log("decelerating fraction: " + GetAbsFraction());
-        Rotate(velocity * GetAbsFraction(), false);
-        if(GetFraction() < snapRange){
-            SetMotionDone();
+        if(velocity >= 0){
+            velocity = Interpolate(minVelocity, slowDownVelocity, GetAbsFraction());
+            Rotate(velocity, false);
+            if(GetAbsFraction() < 0.49 && transform.localEulerAngles.y > endAngle - snapRange){
+                SetMotionDone();
+            }
+        } else {
+            velocity = Interpolate(-minVelocity, -slowDownVelocity, GetAbsFraction());
+            Rotate(velocity, false);
+            if(GetAbsFraction() < 0.49 && transform.localEulerAngles.y < endAngle + snapRange){
+                SetMotionDone();
+            }
         }
     }
 
@@ -154,6 +163,10 @@ public class LinearRotation : MonoBehaviour
         turning = false;
         accelerating = false;
         deceletaring = false;
+    }
+
+    private float Interpolate(float a, float b, float fraction){
+        return a * (1-fraction) + b * fraction;
     }
 
 

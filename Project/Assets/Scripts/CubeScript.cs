@@ -20,7 +20,7 @@ public class CubeScript : MonoBehaviour
     public List<CubeScript>[] connectionsList;
     public IDictionary[] connectionsDirectionDictionary;
 
-    
+    private List<GameObject> sides;
 
     public void Init()
     {
@@ -29,6 +29,15 @@ public class CubeScript : MonoBehaviour
             (int)transform.position.x,
             (int)transform.position.y,
             (int)transform.position.z);
+        sides = new List<GameObject>();
+        foreach(Transform tr in this.transform)
+        {
+                if(tr.tag == "Side")
+                {
+                    sides.Add(tr.gameObject);
+                    Debug.Log("side added to cube");
+                }
+        }
         ResetConnections();
         CalculateProjections();
     }
@@ -45,25 +54,42 @@ public class CubeScript : MonoBehaviour
         }
     }
 
+    private void SetSidesMaterial(Material material){
+        foreach(GameObject side in sides)
+        {
+            Renderer[] children;
+            children = side.GetComponentsInChildren<Renderer>();
+            foreach (Renderer rend in children)
+            {
+                var mats = new Material[rend.materials.Length];
+                for (var j = 0; j < rend.materials.Length; j++)
+                {
+                    mats[j] = material;
+                }
+                rend.materials = mats;
+            }
+        }
+    }
+
     public void MarkPlanted(){
         planted = true;
-        gameObject.GetComponent<Renderer>().material = plantedMaterial;
+        SetSidesMaterial(plantedMaterial);
     }
 
     public void MarkPlantable(){
         if (planted) return;
-        gameObject.GetComponent<Renderer>().material = plantableMaterial;
+        SetSidesMaterial(plantableMaterial);
         Debug.Log("Marked Cube plantable " + pos.ToString());
     }
 
     public void MarkReachable(){
         if (planted) return;
-        gameObject.GetComponent<Renderer>().material = unPlantedMaterial;
+        SetSidesMaterial(unPlantedMaterial);
         Debug.Log("Marked Cube reachable " + pos.ToString());
     }
 
     public void MarkUnreachable(){
-        gameObject.GetComponent<Renderer>().material = unreachableMaterial;
+        SetSidesMaterial(unreachableMaterial);
         Debug.Log("Marked Cube unreachable " + pos.ToString());
     }
 
