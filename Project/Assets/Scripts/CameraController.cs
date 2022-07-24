@@ -9,24 +9,24 @@ public class CameraController : MonoBehaviour
 
     public InputManager inputManager;
     public GridScript grid;
-    private LinearRotation linearRotation;
+    private SnapRotation snapRotation;
 
     private float directTouchVelocity = 0.0F;
     public float touchAngleFactor = 90;
 
     void OnEnable(){ 
-        linearRotation = gameObject.GetComponent<LinearRotation>();
+        snapRotation = gameObject.GetComponent<SnapRotation>();
         inputManager.OnStartTouch += StartTouch;
         inputManager.OnMoveTouch += MoveTouch;
         inputManager.OnEndTouch += EndTouch;
-        linearRotation.OnSettlingOnPerspective += UpdatePerspective;
+        snapRotation.OnSettlingOnPerspective += UpdatePerspective;
     }
     
     void OnDisable(){
         inputManager.OnStartTouch -= StartTouch;
         inputManager.OnMoveTouch -= MoveTouch;
         inputManager.OnEndTouch -= EndTouch;
-        linearRotation.OnSettlingOnPerspective -= UpdatePerspective;
+        snapRotation.OnSettlingOnPerspective -= UpdatePerspective;
     }
 
     // Start is called before the first frame update
@@ -42,12 +42,12 @@ public class CameraController : MonoBehaviour
     public void MoveTouch(Vector2 screenDelta){
         //Debug.Log("Moved touch " + screenDelta.ToString());
         directTouchVelocity = (touchAngleFactor * screenDelta.x) / Time.deltaTime;
-        linearRotation.Rotate(directTouchVelocity, true); // counter rotation slowdown
+        snapRotation.Rotate(directTouchVelocity, true); // counter rotation slowdown
     }
 
     public void EndTouch(Vector2 screenPosition){
         Debug.Log("Ended touch " + screenPosition.ToString());
-        linearRotation.Initialize(directTouchVelocity);
+        snapRotation.Initialize(directTouchVelocity);
     }
    
     public void UpdatePerspective(CamPerspective perspective)

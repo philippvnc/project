@@ -6,10 +6,17 @@ using direction;
 public class CubeScript : MonoBehaviour
 {
 
-    public Material unPlantedMaterial;
-    public Material plantedMaterial;
-    public Material plantableMaterial;
-    public Material unreachableMaterial;
+    public GameObject massivePillarPrefab;
+    public GameObject minimalPillarPrefab;
+
+
+    public Material sideUnplantedMaterial;
+    public Material sidePlantedMaterial;
+    public Material sideUnreachableMaterial;
+
+    public Material topUnplantedMaterial;
+    public Material topPlantedMaterial;
+    public Material topUnreachableMaterial;
 
     public GridScript gridScript;
     public Position3 pos;
@@ -21,6 +28,8 @@ public class CubeScript : MonoBehaviour
     public IDictionary[] connectionsDirectionDictionary;
 
     private List<GameObject> sides;
+    private GameObject top;
+    private List<GameObject> wayConnections;
 
     public void Init()
     {
@@ -35,11 +44,67 @@ public class CubeScript : MonoBehaviour
                 if(tr.tag == "Side")
                 {
                     sides.Add(tr.gameObject);
-                    Debug.Log("side added to cube");
+                } else if(tr.tag == "Top")
+                {
+                    top = tr.gameObject;
+                }
+        }
+        
+        Transform wayTransfrom = null;
+        foreach(Transform tr in this.transform)
+        {
+                if(tr.tag == "Way")
+                {
+                    wayTransfrom = tr;
+                    break;
+                }
+        }
+        wayConnections = new List<GameObject>();
+        foreach(Transform tr in wayTransfrom)
+        {
+                if(tr.tag == "WayConnection")
+                {
+                    wayConnections.Add(tr.gameObject);
+                    tr.gameObject.SetActive(false);
+                    //Debug.Log("added: " + tr.gameObject.name);
                 }
         }
         ResetConnections();
         CalculateProjections();
+    }
+
+    public void SetWayConnections(CamPerspective perspective){
+        foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections){
+            // active way connection
+            if(connectionsArray[perspective.id, planeDirection.id] != null){
+                 wayConnections[planeDirection.id].SetActive(true);
+            } else {
+                wayConnections[planeDirection.id].SetActive(false);
+            } 
+        }
+    }
+        
+
+    public void InstantiateMassivePillars(){
+        for(int i = 1; i <= pos.y; i ++){
+            Vector3 pillarPos = transform.position - new Vector3(0,i,0);
+            GameObject pillarGO = Instantiate(massivePillarPrefab,pillarPos,Quaternion.identity) as GameObject;
+            pillarGO.transform.parent=transform; 
+        }
+    }
+
+    public void InstantiateMinimalPillars(int depth){
+        for(int i = 1; i < pos.y - depth; i ++){
+            Vector3 pillarPos = transform.position - new Vector3(0,i,0);
+            GameObject pillarGO = Instantiate(minimalPillarPrefab,pillarPos,Quaternion.identity) as GameObject;
+            pillarGO.transform.parent=transform; 
+        }
+    }
+
+    private void SetWayConnectionsDisabled(){
+        foreach(GameObject wayConnection in wayConnections){
+            wayConnection.SetActive(false);
+        }
     }
 
     private void ResetConnections(){
@@ -71,25 +136,26 @@ public class CubeScript : MonoBehaviour
         }
     }
 
-    public void MarkPlanted(){
-        planted = true;
-        SetSidesMaterial(plantedMaterial);
+    private void setTopMaterial(Material material){
+        top.GetComponent<Renderer>().material = material;
     }
 
-    public void MarkPlantable(){
-        if (planted) return;
-        SetSidesMaterial(plantableMaterial);
-        Debug.Log("Marked Cube plantable " + pos.ToString());
+    public void MarkPlanted(){
+        planted = true;
+        SetSidesMaterial(sidePlantedMaterial);
+        setTopMaterial(topPlantedMaterial);
     }
 
     public void MarkReachable(){
         if (planted) return;
-        SetSidesMaterial(unPlantedMaterial);
+        SetSidesMaterial(sideUnplantedMaterial);
+        setTopMaterial(topUnplantedMaterial);
         Debug.Log("Marked Cube reachable " + pos.ToString());
     }
 
     public void MarkUnreachable(){
-        SetSidesMaterial(unreachableMaterial);
+        SetSidesMaterial(sideUnreachableMaterial);
+        setTopMaterial(topUnreachableMaterial);
         Debug.Log("Marked Cube unreachable " + pos.ToString());
     }
 
@@ -116,6 +182,7 @@ public class CubeScript : MonoBehaviour
 
     public void UpdateConnectivity()
     {
+        SetWayConnectionsDisabled();
         ResetConnections();
         foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
             foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections)

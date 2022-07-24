@@ -10,7 +10,8 @@ public class GridScript : MonoBehaviour
 {
 
     public GameObject cubePrefab;
-    public int gridSize = 7;
+    public int gridWidth = 7;
+    public int gridHeight = 7;
     public int cubeCount = 3;
     public int skipCurrentDirectionTill = 3;
     public bool skipDirectNeighbors = true;
@@ -19,6 +20,7 @@ public class GridScript : MonoBehaviour
     public CubeScript currentCube;
     public bool[,,] cubeArray; //x,y,z
     public bool[,,,] projectionArray; //p,x,z,y
+    public bool[,,,] prohibitedProjectionArray; //p,x,z,y
     public List<CubeScript> cubeList;
     public IDictionary cubeDictionary;
     public int[,,] cubeSuccessors;
@@ -29,16 +31,85 @@ public class GridScript : MonoBehaviour
 
     public void Start(){
         Debug.Log("Grid Start");
-        cubeArray = new bool[gridSize, gridSize, gridSize];
-        projectionArray = new bool[PerspectiveCollection.perspectiveDirections.Length, gridSize*3, gridSize*3, gridSize*3];
+        cubeArray = new bool[gridWidth, gridHeight, gridWidth];
+        projectionArray = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3, gridHeight*3];
+        prohibitedProjectionArray = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3, gridHeight*3];
         cubeList = new List<CubeScript>();
         cubeDictionary = new Dictionary<CubeScript,int>(); 
         //hardcoded starting perspective for testing
-        currentPerspective = new CamPerspective(CamPerspective.SOUTH_EAST);
-        currentCube = CreateCube(new Vector3(3,3,3));
+        SetPerspective(new CamPerspective(CamPerspective.SOUTH_EAST));
+        //currentPerspective = new CamPerspective(CamPerspective.SOUTH_EAST);
+        currentCube = CreateCube(new Vector3(3,2,3));
+/*
+        CubeScript tempCube0 = CreateCube(new Vector3(5,4,0));
+        UpdateConnectivityForAllCubes();
+        AddProhibitedProjections(tempCube0);
 
+        CubeScript tempCube1 = CreateCube(new Vector3(4,5,1));
+        UpdateConnectivityForAllCubes();
+        AddProhibitedProjections(tempCube1);
+
+        CubeScript tempCube2 = CreateCube(new Vector3(2,5,2));
+        UpdateConnectivityForAllCubes();
+        AddProhibitedProjections(tempCube2);
+        
+        UpdateConnectivityForAllCubes();
+        CalculateSuccessorsInterPerspective();
+        CalculateSuccessors();
+        CreateCubePillars();
+        SetWayConnections();
+        currentCube.MarkPlanted();
+*/
         CreateCubesAroundCurrentCube();
         Debug.Log("Game started");
+    }
+
+    private void CreateCubePillars(){
+        foreach(CubeScript cube in cubeList){
+            int nextCubeY = GetYPosOfNextCube(cube.pos);
+            if(nextCubeY == -1){
+                if(IsPillarInProhibitedProjection(cube)){
+                    cube.InstantiateMinimalPillars(-1);
+                } else {
+                    cube.InstantiateMassivePillars();
+                }
+            } else {
+                cube.InstantiateMinimalPillars(nextCubeY);
+            }
+        }
+    }
+
+    private bool IsPillarInProhibitedProjection(CubeScript cube){
+        for(int y = 0; y < cube.pos.y; y++){
+            if (IsPosition3InProhibitedProjection(new Position3(cube.pos.x, y, cube.pos.z))){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private bool IsPosition3InProhibitedProjection(Position3 position){
+        Debug.Log("checkin pos " + position.ToString());
+        foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+            Position2 projection = Projection.Project(position, perspective);
+            Debug.Log("Prohibited projection check " + perspective.id + " " + projection.x + " " + projection.z + " " + position.y);
+       
+            if(prohibitedProjectionArray[perspective.id,
+                projection.x + gridWidth,
+                projection.z + gridWidth,
+                position.y + gridHeight]){
+                Debug.Log("Pillar is in prohibited zone");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int GetYPosOfNextCube(Position3 pos){
+        for(int y = pos.y -1 ; y >= 0; y--){
+            if(cubeArray[pos.x, y, pos.z]) return y;
+        }
+        return -1;
     }
 
     public void CreateCubesAroundCurrentCube(){
@@ -49,8 +120,9 @@ public class GridScript : MonoBehaviour
         }
         Debug.Log("Created cubes in " + (tries - cubeCount + 1) + " extra tries");
         CalculateSuccessors();
+        CreateCubePillars();
+        SetWayConnections();
         currentCube.MarkPlanted();
-        MarkPlantable();
     }
 
     public void RemoveAllCubesButCurrent(){
@@ -59,6 +131,7 @@ public class GridScript : MonoBehaviour
         foreach(CubeScript cube in tempCubes){
             if(cube != currentCube) RemoveCube(cube);
         }
+        prohibitedProjectionArray = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3, gridHeight*3];
         cubeDictionary[currentCube] = 0;
     }
 
@@ -92,8 +165,14 @@ public class GridScript : MonoBehaviour
 
     public void SetPerspective(CamPerspective perspective){
         currentPerspective = perspective;
+        SetWayConnections();
         MarkUnreachableCubes();
-        MarkPlantable();
+    }
+
+    private void SetWayConnections(){
+        foreach(CubeScript cube in cubeList){
+            cube.SetWayConnections(currentPerspective);
+        }
     }
 
     public CubeScript CreateCube(Vector3 position){
@@ -108,9 +187,9 @@ public class GridScript : MonoBehaviour
         cubeArray[cubeScript.pos.x, cubeScript.pos.y, cubeScript.pos.z] = true;
         foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
             projectionArray[perspective.id,
-                    cubeScript.projection[perspective.id].x + gridSize, 
-                    cubeScript.projection[perspective.id].z + gridSize, 
-                    cubeScript.pos.y + gridSize] = true;
+                    cubeScript.projection[perspective.id].x + gridWidth, 
+                    cubeScript.projection[perspective.id].z + gridWidth, 
+                    cubeScript.pos.y + gridHeight] = true;
         }
 
         // set list and dict
@@ -125,9 +204,9 @@ public class GridScript : MonoBehaviour
         cubeArray[cube.pos.x, cube.pos.y, cube.pos.z] = false;
         foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
             projectionArray[perspective.id,
-                    cube.projection[perspective.id].x + gridSize, 
-                    cube.projection[perspective.id].z + gridSize, 
-                    cube.pos.y + gridSize] = false;
+                    cube.projection[perspective.id].x + gridWidth, 
+                    cube.projection[perspective.id].z + gridWidth, 
+                    cube.pos.y + gridHeight] = false;
         }
 
         // set list and dict
@@ -140,7 +219,7 @@ public class GridScript : MonoBehaviour
 
     public List<Vector3> GenerateNewNeighborPositions(bool skipCurrentPerspective, bool skipDirectNeighbors){ 
         List<Vector3> freeNeighbors = new List<Vector3>();
-        bool[,,] freeNeighborsArray = new bool[gridSize, gridSize, gridSize];
+        bool[,,] freeNeighborsArray = new bool[gridWidth, gridHeight, gridWidth];
         foreach(CubeScript cube in cubeList)
         {
             foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections)
@@ -165,14 +244,14 @@ public class GridScript : MonoBehaviour
                             shiftedNeighbors = Projection.GetAllShiftsToHeigh(position, perspective, 0, position.y+1);
                         }
                     } else {
-                        shiftedNeighbors = Projection.GetAllShiftsToHeigh(position, perspective, position.y+1, gridSize-1);
+                        shiftedNeighbors = Projection.GetAllShiftsToHeigh(position, perspective, position.y+1, gridHeight-1);
                     }
 
                     Debug.Log("generated shifts " + shiftedNeighbors.Count);
 
                     foreach(Position3 shiftedNeighbor in shiftedNeighbors)
                     {
-                        if (IsOutOfGrid(shiftedNeighbor.x, shiftedNeighbor.z)) {
+                        if (IsOutOfGrid(shiftedNeighbor.x, shiftedNeighbor.y, shiftedNeighbor.z)) {
                             Debug.Log("dropping shift out of bounds " + shiftedNeighbor.ToString());
                             continue;
                         }
@@ -182,11 +261,16 @@ public class GridScript : MonoBehaviour
                         if (IsCubeBeneith(shiftedNeighbor)) {
                             continue;
                         }
-                        //Debug.Log("Can i add this shifted position? " + shiftedNeighbor.ToString());
+                        Debug.Log("Can i add this shifted position? " + shiftedNeighbor.ToString());
+                        
                         // cube or neighbor position already there?
                         if(cubeArray[shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z] 
                             || freeNeighborsArray[shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z])
                         {
+                            continue;
+                        }
+                        // Projection prohibited?
+                        if (IsPosition3InProhibitedProjection(shiftedNeighbor)){
                             continue;
                         }
                         Debug.Log("register possible neighbor position " + shiftedNeighbor.ToString());
@@ -230,22 +314,53 @@ public class GridScript : MonoBehaviour
                 }
             } 
         }
+        // cube is accepted
+        AddProhibitedProjections(tempCube);
     }
+
+    private void AddProhibitedProjections(CubeScript cube){
+        foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+            foreach (CubeScript connectedCube in cube.connectionsList[perspective.id]){
+                AddProhibitedProjections(perspective,
+                    cube, 
+                    connectedCube);
+            }
+        }
+    }
+
+    private void AddProhibitedProjections(CamPerspective perspective,
+        CubeScript cube, CubeScript otherCube){
+        Position3 directlyAbovePosition1 = new Position3(cube.pos.x, cube.pos.y + 1, cube. pos.z);
+        Position2 directlyAboveProjection1 = Projection.Project(directlyAbovePosition1, perspective);
+
+        Position3 directlyAbovePosition2 = new Position3(otherCube.pos.x, otherCube.pos.y + 1, otherCube. pos.z);
+        Position2 directlyAboveProjection2 = Projection.Project(directlyAbovePosition2, perspective);
+      
+
+        int minY = Mathf.Min(cube.pos.y, otherCube.pos.y);
+        for(int y = minY; y < gridHeight; y++){
+            prohibitedProjectionArray[perspective.id, 
+                directlyAboveProjection1.x + gridWidth, 
+                directlyAboveProjection1.z + gridWidth, 
+                y + gridHeight] = true;
+            Debug.Log("Prohibited projection added " + perspective.id + " " + directlyAboveProjection1.x + " " + directlyAboveProjection1.z + " " + y);
+        }
+        for(int y = minY; y < gridHeight; y++){
+            prohibitedProjectionArray[perspective.id, 
+                directlyAboveProjection2.x + gridWidth, 
+                directlyAboveProjection2.z + gridWidth, 
+                y + gridHeight] = true;
+            Debug.Log("Prohibited projection added " + perspective.id + " " + directlyAboveProjection2.x + " " + directlyAboveProjection2.z + " " + y);
+       
+        }
+    }
+
 
     public void UpdateConnectivityForAllCubes()
     {
         foreach (CubeScript cube in cubeList)
         {
             cube.UpdateConnectivity();
-        }
-    }
-
-    public void MarkPlantable(){
-        foreach(CubeScript cube in cubeList)
-        {
-            if(GetSuccessorOnPath(cube) != null){
-                cube.MarkPlantable();
-            } 
         }
     }
 
@@ -394,7 +509,8 @@ public class GridScript : MonoBehaviour
     public bool HasInterPerspectiveSuccessorOnPath(CubeScript startCube, CubeScript endCube){
         int i = (int)cubeDictionary[startCube];
         int j = (int)cubeDictionary[endCube];
-        int successorId = cubeSuccessorsInterPerspective[(int)cubeDictionary[startCube],(int)cubeDictionary[endCube]];
+        Debug.Log("can we go from cube " + i + " to cube " + j + " ?");
+        int successorId = cubeSuccessorsInterPerspective[i,j];
         return (successorId != -1);
     }
 
@@ -403,22 +519,27 @@ public class GridScript : MonoBehaviour
     }
 
     public bool IsOutOfGrid(int x, int y, int z){
-        return IsOutOfGrid(x) || IsOutOfGrid(y) || IsOutOfGrid(z);
+        return IsOutOfGridWidth(x) || IsOutOfGridHeight(y) || IsOutOfGridWidth(z);
     }
 
-    public bool IsOutOfGrid(int x, int z){
-        return IsOutOfGrid(x) || IsOutOfGrid(z);
+    public bool IsOutOfGridWidth(int x, int z){
+        return IsOutOfGridWidth(x) || IsOutOfGridWidth(z);
     }
 
-    public bool IsOutOfGrid(int x){
-        return (x < 0 || x >= gridSize);
+    public bool IsOutOfGridWidth(int x){
+        return (x < 0 || x >= gridWidth);
     }
+    
+    public bool IsOutOfGridHeight(int y){
+        return (y < 0 || y >= gridHeight);
+    }
+
 
     public bool IsCubeAtProjection(CamPerspective perspective, Position2 projection, int minY, int maxY){
         //Debug.Log("cheking for projection " + projection.ToString() + " between y: " + minY + " - " + maxY);
         for(int y = minY; y < maxY+1; y++){
             //Debug.Log("y: " + y);
-            if(projectionArray[perspective.id, projection.x + gridSize, projection.z + gridSize, y+ gridSize]){
+            if(projectionArray[perspective.id, projection.x + gridWidth, projection.z + gridWidth, y+ gridHeight]){
                 Debug.Log("cube here");
                 return true;
             }
@@ -427,7 +548,7 @@ public class GridScript : MonoBehaviour
     }
 
     public bool IsCubeAbove(Position3 position){
-        if(position.y + 1 >= gridSize) return false;
+        if(position.y + 1 >= gridHeight) return false;
         return cubeArray[position.x, position.y + 1, position.z];
     }
 
