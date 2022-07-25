@@ -4,58 +4,70 @@ using UnityEngine;
 
 public class LinearMovement : MonoBehaviour
 {
+    public delegate void OnWayPointReachedEvent();
+    public event OnWayPointReachedEvent OnWayPointReached;
+
     // Transforms to act as start and end markers for the journey.
     private Vector3 startMarker;
-    private Vector3 fakeEndMarker;
-    private Vector3 realEndMarker;
+    private Vector3 midEndMarker;
+    private Vector3 midStartMarker;
+    private Vector3 endMarker;
 
-    // Movement speed in units per second.
     public float speed = 1.0F;
 
-    // Time when the movement started.
-    private float startTime;
+    private float fraction;
+    public bool running;
+    private bool beforeMid;
 
-    // Total distance between the markers.
-    private float journeyLength;
-
-    private bool running;
-
-    public void Move(Vector3 start, Vector3 fakeEnd, Vector3 realEnd)
+    public void Move(Vector3 start, Vector3 midEnd, Vector3 midStart, Vector3 end)
     {
         startMarker = start;
-        fakeEndMarker = fakeEnd;
-        realEndMarker = realEnd;
-
-        // Keep a note of the time the movement started.
-        startTime = Time.time;
-
-        // Calculate the journey length.
-        journeyLength = Vector3.Distance(startMarker, fakeEndMarker);
-
+        midEndMarker = midEnd;
+        midStartMarker = midStart;
+        endMarker = end;
+        /*
+        Debug.Log("start: " + startMarker);
+        Debug.Log("midEnd: " + midEndMarker);
+        Debug.Log("midStart: " + midStartMarker);
+        Debug.Log("end: " + endMarker);
+        */
         // actually start
+        fraction = 0;
         running = true;
+        beforeMid = true;
     }
 
-    // Move to the target end position.
     void Update()
     {
         if (!running) return;
-
-        // Distance moved equals elapsed time times speed..
-        float distCovered = (Time.time - startTime) * speed;
-
-        // Fraction of journey completed equals current distance divided by total distance.
-        float fractionOfJourney = distCovered / journeyLength;
-
-        if(fractionOfJourney >= 1)
-        {
-            fractionOfJourney = 1; 
-            transform.position = realEndMarker;
-            running = false;
-        } else
-        {
-            // Set our position as a fraction of the distance between the markers.
-            transform.position = Vector3.Lerp(startMarker, fakeEndMarker, fractionOfJourney);
+        
+        fraction +=  Time.deltaTime * speed;
+        //Debug.Log("fraction: " + fraction);
+        
+        
+        if(beforeMid){
+            if(fraction >= 1)
+            {
+                transform.position = midStartMarker;
+                beforeMid = false;
+                fraction = 0;
+            } else
+            {
+                transform.position = Vector3.Lerp(startMarker, midEndMarker, fraction);
+            }
+        } else {
+            if(fraction >= 1)
+            {
+                transform.position = endMarker;
+                running = false;
+                if(OnWayPointReached != null) OnWayPointReached();
+            } else
+            {
+                transform.position = Vector3.Lerp(midStartMarker, endMarker, fraction);
+            }
         }
+            
+        //Debug.Log("transform.position: " + transform.position);
+       
     }
 }

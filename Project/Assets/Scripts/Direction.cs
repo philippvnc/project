@@ -17,6 +17,31 @@ namespace direction
         new public string ToString(){
             return "x: " + x + " y: " + y + " z: " + z;  
         }
+
+        public override bool Equals(object obj)  
+        {  
+            if (obj == null)  
+                return false;  
+   
+            if (ReferenceEquals(obj, this))  
+                return true;  
+   
+            if (obj.GetType() != this.GetType())  
+                return false;  
+   
+            Position3 positionToCheck = obj as Position3;  
+   
+            return this.x == positionToCheck.x  
+                && this.y == positionToCheck.y  
+                && this.z == positionToCheck.z;  
+        }  
+
+        public override int GetHashCode()  
+        {  
+            return this.x.GetHashCode()  
+                 ^ this.y.GetHashCode()  
+                 ^ this.z.GetHashCode();  
+        } 
     }
 
     public class Position2

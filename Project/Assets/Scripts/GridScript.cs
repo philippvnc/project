@@ -40,26 +40,7 @@ public class GridScript : MonoBehaviour
         SetPerspective(new CamPerspective(CamPerspective.SOUTH_EAST));
         //currentPerspective = new CamPerspective(CamPerspective.SOUTH_EAST);
         currentCube = CreateCube(new Vector3(3,2,3));
-/*
-        CubeScript tempCube0 = CreateCube(new Vector3(5,4,0));
-        UpdateConnectivityForAllCubes();
-        AddProhibitedProjections(tempCube0);
 
-        CubeScript tempCube1 = CreateCube(new Vector3(4,5,1));
-        UpdateConnectivityForAllCubes();
-        AddProhibitedProjections(tempCube1);
-
-        CubeScript tempCube2 = CreateCube(new Vector3(2,5,2));
-        UpdateConnectivityForAllCubes();
-        AddProhibitedProjections(tempCube2);
-        
-        UpdateConnectivityForAllCubes();
-        CalculateSuccessorsInterPerspective();
-        CalculateSuccessors();
-        CreateCubePillars();
-        SetWayConnections();
-        currentCube.MarkPlanted();
-*/
         CreateCubesAroundCurrentCube();
         Debug.Log("Game started");
     }
@@ -89,16 +70,16 @@ public class GridScript : MonoBehaviour
     }
 
     private bool IsPosition3InProhibitedProjection(Position3 position){
-        Debug.Log("checkin pos " + position.ToString());
+        //Debug.Log("checkin pos " + position.ToString());
         foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
             Position2 projection = Projection.Project(position, perspective);
-            Debug.Log("Prohibited projection check " + perspective.id + " " + projection.x + " " + projection.z + " " + position.y);
+            //Debug.Log("Prohibited projection check " + perspective.id + " " + projection.x + " " + projection.z + " " + position.y);
        
             if(prohibitedProjectionArray[perspective.id,
                 projection.x + gridWidth,
                 projection.z + gridWidth,
                 position.y + gridHeight]){
-                Debug.Log("Pillar is in prohibited zone");
+                //Debug.Log("Pillar is in prohibited zone");
                 return true;
             }
         }
@@ -261,7 +242,7 @@ public class GridScript : MonoBehaviour
                         if (IsCubeBeneith(shiftedNeighbor)) {
                             continue;
                         }
-                        Debug.Log("Can i add this shifted position? " + shiftedNeighbor.ToString());
+                        //Debug.Log("Can i add this shifted position? " + shiftedNeighbor.ToString());
                         
                         // cube or neighbor position already there?
                         if(cubeArray[shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z] 
@@ -273,7 +254,7 @@ public class GridScript : MonoBehaviour
                         if (IsPosition3InProhibitedProjection(shiftedNeighbor)){
                             continue;
                         }
-                        Debug.Log("register possible neighbor position " + shiftedNeighbor.ToString());
+                        //Debug.Log("register possible neighbor position " + shiftedNeighbor.ToString());
                         freeNeighbors.Add(new Vector3(shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z));
                         freeNeighborsArray[shiftedNeighbor.x,shiftedNeighbor.y,shiftedNeighbor.z] = true;
                     }
@@ -343,14 +324,14 @@ public class GridScript : MonoBehaviour
                 directlyAboveProjection1.x + gridWidth, 
                 directlyAboveProjection1.z + gridWidth, 
                 y + gridHeight] = true;
-            Debug.Log("Prohibited projection added " + perspective.id + " " + directlyAboveProjection1.x + " " + directlyAboveProjection1.z + " " + y);
+            //Debug.Log("Prohibited projection added " + perspective.id + " " + directlyAboveProjection1.x + " " + directlyAboveProjection1.z + " " + y);
         }
         for(int y = minY; y < gridHeight; y++){
             prohibitedProjectionArray[perspective.id, 
                 directlyAboveProjection2.x + gridWidth, 
                 directlyAboveProjection2.z + gridWidth, 
                 y + gridHeight] = true;
-            Debug.Log("Prohibited projection added " + perspective.id + " " + directlyAboveProjection2.x + " " + directlyAboveProjection2.z + " " + y);
+            //Debug.Log("Prohibited projection added " + perspective.id + " " + directlyAboveProjection2.x + " " + directlyAboveProjection2.z + " " + y);
        
         }
     }
@@ -498,6 +479,14 @@ public class GridScript : MonoBehaviour
         int i = (int)cubeDictionary[startCube];
         int j = (int)cubeDictionary[endCube];
         int successorId = cubeSuccessors[perspective.id,(int)cubeDictionary[startCube],(int)cubeDictionary[endCube]];
+        if(successorId == -1) return null;
+        return cubeList[successorId];
+    }
+
+    public CubeScript GetSuccessorOnPath(CubeScript startCube, CubeScript endCube){
+        int i = (int)cubeDictionary[startCube];
+        int j = (int)cubeDictionary[endCube];
+        int successorId = cubeSuccessors[currentPerspective.id,(int)cubeDictionary[startCube],(int)cubeDictionary[endCube]];
         if(successorId == -1) return null;
         return cubeList[successorId];
     }
