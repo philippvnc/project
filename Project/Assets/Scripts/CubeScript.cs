@@ -73,6 +73,15 @@ public class CubeScript : MonoBehaviour
         CalculateProjections();
     }
 
+    public void PrintConnections(){
+        Debug.Log("connections for cube: " + pos.ToString());
+        foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+            foreach (CubeScript key in connectionsDirectionDictionary[perspective.id].Keys) {
+                Debug.Log(key.pos.ToString() + " perspective: " + perspective.id + " direction: " + connectionsDirectionDictionary[perspective.id][key]);
+            }
+        }
+    }
+
     public void SetWayConnections(CamPerspective perspective){
         foreach (PlaneDirection planeDirection in PlaneDirectionCollection.planeDirections){
             // active way connection
@@ -258,7 +267,7 @@ public class CubeScript : MonoBehaviour
 
     private bool IsVisuallyBocked(CubeScript cube, CamPerspective perspective){
         CubeScript higherCube = GetHigherCube(this, cube);
-        return gridScript.IsCubeAtProjection(perspective,
+        return gridScript.IsCubeAtProjectionInYRange(perspective,
         Projection.Project(   
             new Position3(
                 higherCube.pos.x + perspective.viewDirection.pos.x, 

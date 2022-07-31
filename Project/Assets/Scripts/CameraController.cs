@@ -7,6 +7,9 @@ using direction;
 public class CameraController : MonoBehaviour
 {
 
+    public delegate void OnChangePerspectiveEvent();
+    public event OnChangePerspectiveEvent OnChangePerspective;
+
     public InputManager inputManager;
     public GridScript grid;
     private SnapRotation snapRotation;
@@ -55,6 +58,7 @@ public class CameraController : MonoBehaviour
         if (perspective.id != grid.currentPerspective.id)
         {
             grid.SetPerspective(perspective);
+            if(OnChangePerspective != null) OnChangePerspective();
         }
     }
 }

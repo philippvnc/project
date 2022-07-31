@@ -8,8 +8,12 @@ using pathfinding;
 [DefaultExecutionOrder(-9)]
 public class GridScript : MonoBehaviour
 {
+    public delegate void OnChangeCurrentCubeEvent(CubeScript cube);
+    public event OnChangeCurrentCubeEvent OnChangeCurrentCube;
 
     public GameObject cubePrefab;
+    public GameObject enemyPrefab;
+
     public int gridWidth = 7;
     public int gridHeight = 7;
     public int cubeCount = 3;
@@ -20,12 +24,13 @@ public class GridScript : MonoBehaviour
     public CubeScript currentCube;
     public bool[,,] cubeArray; //x,y,z
     public bool[,,,] projectionArray; //p,x,z,y
+    public bool[,,] projectionArray2d; //p,x,z
     public bool[,,,] prohibitedProjectionArray; //p,x,z,y
     public List<CubeScript> cubeList;
     public IDictionary cubeDictionary;
     public int[,,] cubeSuccessors;
-
     public int[,] cubeSuccessorsInterPerspective;
+    public int[,] costsInterPerspective;
     
     public CamPerspective currentPerspective;
 
@@ -33,6 +38,7 @@ public class GridScript : MonoBehaviour
         Debug.Log("Grid Start");
         cubeArray = new bool[gridWidth, gridHeight, gridWidth];
         projectionArray = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3, gridHeight*3];
+        projectionArray2d = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3];
         prohibitedProjectionArray = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3, gridHeight*3];
         cubeList = new List<CubeScript>();
         cubeDictionary = new Dictionary<CubeScript,int>(); 
@@ -42,7 +48,19 @@ public class GridScript : MonoBehaviour
         currentCube = CreateCube(new Vector3(3,2,3));
 
         CreateCubesAroundCurrentCube();
+
+        CreateEnemy();        
+
         Debug.Log("Game started");
+    }
+
+    private void CreateEnemy(){
+        CubeScript furthestCube = getFurthestCube(currentCube);
+        Position3 furthestCubePos = furthestCube.pos;
+        Vector3 enemyPos = new Vector3(furthestCubePos.x, furthestCubePos.y + 1, furthestCubePos.z);
+        GameObject enemy = Instantiate(enemyPrefab, enemyPos, Quaternion.identity) as GameObject;
+        EnemyController enemyController = enemy.GetComponent<EnemyController>();
+        enemyController.Init(this, furthestCube);
     }
 
     private void CreateCubePillars(){
@@ -122,6 +140,7 @@ public class GridScript : MonoBehaviour
         if(IsEveryCubePlanted()){
            NewLevel();
         } 
+        if(OnChangeCurrentCube != null) OnChangeCurrentCube(cube);
     }
 
     public void NewLevel()
@@ -171,6 +190,9 @@ public class GridScript : MonoBehaviour
                     cubeScript.projection[perspective.id].x + gridWidth, 
                     cubeScript.projection[perspective.id].z + gridWidth, 
                     cubeScript.pos.y + gridHeight] = true;
+            projectionArray2d[perspective.id,
+                    cubeScript.projection[perspective.id].x + gridWidth, 
+                    cubeScript.projection[perspective.id].z + gridWidth] = true;
         }
 
         // set list and dict
@@ -188,14 +210,35 @@ public class GridScript : MonoBehaviour
                     cube.projection[perspective.id].x + gridWidth, 
                     cube.projection[perspective.id].z + gridWidth, 
                     cube.pos.y + gridHeight] = false;
+            projectionArray2d[perspective.id,
+                    cube.projection[perspective.id].x + gridWidth, 
+                    cube.projection[perspective.id].z + gridWidth] = false;
         }
 
         // set list and dict
         cubeList.Remove(cube);
         cubeDictionary.Remove(cube);
 
+        //
+        SetProjectionForAllCubes();
+
         // destroy gameobject
         Destroy(cube.gameObject);
+    }
+
+    private void SetProjectionForAllCubes(){
+        foreach(CubeScript cube in cubeList)
+        {
+            foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+                projectionArray[perspective.id,
+                        cube.projection[perspective.id].x + gridWidth, 
+                        cube.projection[perspective.id].z + gridWidth, 
+                        cube.pos.y + gridHeight] = true;
+                projectionArray2d[perspective.id,
+                        cube.projection[perspective.id].x + gridWidth, 
+                        cube.projection[perspective.id].z + gridWidth] = true;
+            }
+        }
     }
 
     public List<Vector3> GenerateNewNeighborPositions(bool skipCurrentPerspective, bool skipDirectNeighbors){ 
@@ -234,6 +277,10 @@ public class GridScript : MonoBehaviour
                     {
                         if (IsOutOfGrid(shiftedNeighbor.x, shiftedNeighbor.y, shiftedNeighbor.z)) {
                             Debug.Log("dropping shift out of bounds " + shiftedNeighbor.ToString());
+                            continue;
+                        }
+                        if(IsCubeAtProjectionInAnyPerspective(shiftedNeighbor)){
+                            Debug.Log("skipping this position, there is already a cube at this projection");
                             continue;
                         }
                         if (IsCubeAbove(shiftedNeighbor)) {
@@ -362,7 +409,7 @@ public class GridScript : MonoBehaviour
         int n = cubeList.Count;
         cubeSuccessors = new int[PerspectiveCollection.perspectiveDirections.Length,n,n];
         foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
-            int[,] tempSuccessors = Pathfinding.FloydWarshallSuccessors(GetInitialSuccessors(perspective));
+            int[,] tempSuccessors = Pathfinding.FloydWarshallSuccessors(GetInitialSuccessors(perspective)).successors;
             for (int j = 0; j < cubeSuccessors.GetLength(1); j++)
             {
                 for (int k = 0; k < cubeSuccessors.GetLength(2); k++)
@@ -390,7 +437,9 @@ public class GridScript : MonoBehaviour
     }
 
     public void CalculateSuccessorsInterPerspective(){
-        cubeSuccessorsInterPerspective = Pathfinding.FloydWarshallSuccessors(GetInitialSuccessorsInterPerspective());
+        PathfindingResult pathfindingResult = Pathfinding.FloydWarshallSuccessors(GetInitialSuccessorsInterPerspective());
+        cubeSuccessorsInterPerspective = pathfindingResult.successors;
+        costsInterPerspective = pathfindingResult.costs;
         Debug.Log("Calculated InterPerspective Successors");
         /*
         for (int j = 0; j < cubeSuccessorsInterPerspective.GetLength(0); j++)
@@ -474,11 +523,25 @@ public class GridScript : MonoBehaviour
         */
         return initialSuccessorsInterPerspective;
     }
+    
+    public InterPerspectiveWaypoint GetSuccessorOnPathInterPerspective(CamPerspective perspective, CubeScript startCube, CubeScript endCube){
+        int i = (int)cubeDictionary[startCube] + cubeList.Count * perspective.id;
+        int j = (int)cubeDictionary[endCube];
+        int successorId = cubeSuccessorsInterPerspective[i,j];
+        if(successorId == -1) return null;
+        CamPerspective wayPointPerspective = new CamPerspective((successorId - successorId % cubeList.Count) / cubeList.Count);
+        Debug.Log("caluculated perspective id: " + wayPointPerspective.id + " from successor id: " + successorId);
+        CubeScript wayPointCube = cubeList[successorId % cubeList.Count]; 
+        Debug.Log("waypoint cube: " + wayPointCube.pos.ToString());
+        startCube.PrintConnections();
+        PlaneDirection direction = (PlaneDirection) startCube.connectionsDirectionDictionary[perspective.id][wayPointCube];    
+        return new InterPerspectiveWaypoint(wayPointCube, wayPointPerspective, direction);
+    }
 
     public CubeScript GetSuccessorOnPath(CamPerspective perspective, CubeScript startCube, CubeScript endCube){
         int i = (int)cubeDictionary[startCube];
         int j = (int)cubeDictionary[endCube];
-        int successorId = cubeSuccessors[perspective.id,(int)cubeDictionary[startCube],(int)cubeDictionary[endCube]];
+        int successorId = cubeSuccessors[perspective.id,i,j];
         if(successorId == -1) return null;
         return cubeList[successorId];
     }
@@ -486,7 +549,7 @@ public class GridScript : MonoBehaviour
     public CubeScript GetSuccessorOnPath(CubeScript startCube, CubeScript endCube){
         int i = (int)cubeDictionary[startCube];
         int j = (int)cubeDictionary[endCube];
-        int successorId = cubeSuccessors[currentPerspective.id,(int)cubeDictionary[startCube],(int)cubeDictionary[endCube]];
+        int successorId = cubeSuccessors[currentPerspective.id,i,j];
         if(successorId == -1) return null;
         return cubeList[successorId];
     }
@@ -523,8 +586,17 @@ public class GridScript : MonoBehaviour
         return (y < 0 || y >= gridHeight);
     }
 
+    public bool IsCubeAtProjectionInAnyPerspective(Position3 position){
+        foreach(CamPerspective perspective in PerspectiveCollection.perspectiveDirections){
+            Position2 projection = Projection.Project(position, perspective); 
+            if( projectionArray2d[perspective.id, projection.x + gridWidth, projection.z + gridWidth]){
+                return true;
+            }   
+        }
+        return false;
+    }
 
-    public bool IsCubeAtProjection(CamPerspective perspective, Position2 projection, int minY, int maxY){
+    public bool IsCubeAtProjectionInYRange(CamPerspective perspective, Position2 projection, int minY, int maxY){
         //Debug.Log("cheking for projection " + projection.ToString() + " between y: " + minY + " - " + maxY);
         for(int y = minY; y < maxY+1; y++){
             //Debug.Log("y: " + y);
@@ -545,5 +617,21 @@ public class GridScript : MonoBehaviour
         if(position.y - 1 < 0) return false;
         return cubeArray[position.x, position.y - 1, position.z];
     }
+
+    public CubeScript getFurthestCube(CubeScript cube){
+        int cubeIndex = (int)cubeDictionary[cube];
+        int highestCost = -1;
+        int furthestCubeIndex = -1;
+        for(int i = 0; i < cubeList.Count; i++){
+            if(i == cubeIndex) continue;
+            int tempCost = costsInterPerspective[i, cubeIndex];
+            if(tempCost > highestCost){
+                highestCost = tempCost;
+                furthestCubeIndex = i;
+            }
+        }
+        if(furthestCubeIndex == -1) return null;
+        return cubeList[furthestCubeIndex];
+    } 
 
 }

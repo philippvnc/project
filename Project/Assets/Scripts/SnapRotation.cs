@@ -14,6 +14,8 @@ public class SnapRotation : MonoBehaviour
     private float endAngle;
     private float startEndAngleDiff;
 
+    private CamPerspective perspective;
+
     public float velocity = 0F;
     public float minVelocity = 10F;
     public float maxVelocity = 360F;
@@ -75,8 +77,7 @@ public class SnapRotation : MonoBehaviour
     private void InitializeSettling(){
         settling = true;   
         startAngle = transform.localEulerAngles.y;
-        CamPerspective perspective = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y + (velocity*regardVelocity));
-        if(OnSettlingOnPerspective != null) OnSettlingOnPerspective(perspective);
+        perspective = PerspectiveCollection.GetClosestPerspective(transform.localEulerAngles.y + (velocity*regardVelocity));
         endAngle = perspective.angle;
         startEndAngleDiff = endAngle - startAngle;
         Debug.Log("From " + startAngle + " to " + endAngle + " is dist " + startEndAngleDiff);
@@ -155,6 +156,7 @@ public class SnapRotation : MonoBehaviour
         velocity = 0;
         SetYEulerAngleTo(endAngle);
         CancelEverything();
+        if(OnSettlingOnPerspective != null) OnSettlingOnPerspective(perspective);
     }
 
     private void CancelEverything(){

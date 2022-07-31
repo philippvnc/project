@@ -4,9 +4,19 @@ using UnityEngine;
 
 namespace pathfinding
 {
+    public class PathfindingResult{
+        public int[,] successors;
+        public int[,] costs;
+
+        public PathfindingResult(int[,] successors, int[,] costs){
+            this.successors = successors;
+            this.costs = costs;
+        }
+    }
+
     public static class Pathfinding
     {
-        public static int[,] FloydWarshallSuccessors(int[,] initialSuccessors){
+        public static PathfindingResult FloydWarshallSuccessors(int[,] initialSuccessors){
             int n = initialSuccessors.GetLength(0);
             int[,] successors = new int[n,n];
             int[,] costs = new int[n,n];
@@ -35,7 +45,7 @@ namespace pathfinding
                     }
                 }
             }
-            return successors;
+            return new PathfindingResult(successors, costs);
         }
 
         private static int addCosts(int a, int b) {
