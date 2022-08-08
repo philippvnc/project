@@ -8,6 +8,7 @@ TagManager:
   - WayConnection
   - Way
   - Top
+  - Enemy
   layers:
   - Default
   - TransparentFX

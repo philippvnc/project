@@ -25,13 +25,6 @@ public class LinearMovement : MonoBehaviour
         midEndMarker = midEnd;
         midStartMarker = midStart;
         endMarker = end;
-        /*
-        Debug.Log("start: " + startMarker);
-        Debug.Log("midEnd: " + midEndMarker);
-        Debug.Log("midStart: " + midStartMarker);
-        Debug.Log("end: " + endMarker);
-        */
-        // actually start
         fraction = 0;
         running = true;
         beforeMid = true;

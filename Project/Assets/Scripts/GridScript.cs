@@ -11,12 +11,18 @@ public class GridScript : MonoBehaviour
     public delegate void OnChangeCurrentCubeEvent(CubeScript cube);
     public event OnChangeCurrentCubeEvent OnChangeCurrentCube;
 
+    public CamPerspective currentPerspective;
+    public ScoreController scoreController;
+
     public GameObject cubePrefab;
     public GameObject enemyPrefab;
 
     public int gridWidth = 7;
     public int gridHeight = 7;
-    public int cubeCount = 3;
+    public int initialCubeCount = 2;
+    public int increaseCubeCount = 2;
+    public int cubesPerEnemy = 10;
+    public int cubeCount;
     public int skipCurrentDirectionTill = 3;
     public bool skipDirectNeighbors = true;
     public int maxTriesForCubeCreation = 20;
@@ -31,27 +37,38 @@ public class GridScript : MonoBehaviour
     public int[,,] cubeSuccessors;
     public int[,] cubeSuccessorsInterPerspective;
     public int[,] costsInterPerspective;
-    
-    public CamPerspective currentPerspective;
+
+    public List<EnemyController> enemyList;
 
     public void Start(){
         Debug.Log("Grid Start");
+        RestartGame();
+    }
+
+    public void RestartGame(){
         cubeArray = new bool[gridWidth, gridHeight, gridWidth];
         projectionArray = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3, gridHeight*3];
         projectionArray2d = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3];
         prohibitedProjectionArray = new bool[PerspectiveCollection.perspectiveDirections.Length, gridWidth*3, gridWidth*3, gridHeight*3];
         cubeList = new List<CubeScript>();
-        cubeDictionary = new Dictionary<CubeScript,int>(); 
+        cubeDictionary = new Dictionary<CubeScript,int>();
+        cubeCount = initialCubeCount; 
+        enemyList = new List<EnemyController>();
         //hardcoded starting perspective for testing
         SetPerspective(new CamPerspective(CamPerspective.SOUTH_EAST));
-        //currentPerspective = new CamPerspective(CamPerspective.SOUTH_EAST);
+
         currentCube = CreateCube(new Vector3(3,2,3));
-
         CreateCubesAroundCurrentCube();
-
-        CreateEnemy();        
-
+        scoreController.Reset();
         Debug.Log("Game started");
+    }
+
+    private void CreateEnemies(){
+        int desiredNumberEnemies = (int) cubeCount / cubesPerEnemy;
+
+        for (int i = 0; i < desiredNumberEnemies - enemyList.Count; i++){
+            CreateEnemy();
+        }
     }
 
     private void CreateEnemy(){
@@ -61,6 +78,7 @@ public class GridScript : MonoBehaviour
         GameObject enemy = Instantiate(enemyPrefab, enemyPos, Quaternion.identity) as GameObject;
         EnemyController enemyController = enemy.GetComponent<EnemyController>();
         enemyController.Init(this, furthestCube);
+        enemyList.Add(enemyController);
     }
 
     private void CreateCubePillars(){
@@ -136,10 +154,15 @@ public class GridScript : MonoBehaviour
 
     public void SetCurrentCube(CubeScript cube){
         currentCube = cube;
-        currentCube.MarkPlanted();
+        if(!currentCube.planted){
+            currentCube.MarkPlanted();
+            scoreController.Increase(1);
+        }
+        
         if(IsEveryCubePlanted()){
            NewLevel();
         } 
+
         if(OnChangeCurrentCube != null) OnChangeCurrentCube(cube);
     }
 
@@ -147,8 +170,9 @@ public class GridScript : MonoBehaviour
     {
         RemoveAllCubesButCurrent();
         Debug.Log("removed all cubes but current");
-        cubeCount += 1;
+        cubeCount += increaseCubeCount;
         CreateCubesAroundCurrentCube();
+        CreateEnemies();
         Debug.Log("created new cubes");
     }
 
